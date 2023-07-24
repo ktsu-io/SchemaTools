@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<OutputType>Exe</OutputType>
+		<BaseOutputPath>..\bin</BaseOutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" />
+    <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
+    <ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
+    <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
+  </ItemGroup>
+
+</Project>

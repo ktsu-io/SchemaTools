@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<OutputType>WinExe</OutputType>
+		<BaseOutputPath>..\bin</BaseOutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImGuiApp\ImGuiApp\ImGuiApp.csproj" />
+    <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
+    <ProjectReference Include="..\ReusableWinForms\ReusableWinForms\ReusableWinForms.csproj" />
+    <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
+  </ItemGroup>
+
+</Project>

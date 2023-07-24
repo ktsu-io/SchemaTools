@@ -1,0 +1,9 @@
+[submodule "ImGuiApp"]
+	path = ImGuiApp
+	url = git@github.com:ktsu-io/ImGuiApp.git
+[submodule "StrongPaths"]
+	path = StrongPaths
+	url = git@github.com:ktsu-io/StrongPaths.git
+[submodule "ReusableWinForms"]
+	path = ReusableWinForms
+	url = git@github.com:ktsu-io/ReusableWinForms.git
