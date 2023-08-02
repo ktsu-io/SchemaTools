@@ -1,4 +1,4 @@
-﻿namespace medmondson
+﻿namespace ktsu.io
 {
 	internal class DataSourceGenerator
 	{

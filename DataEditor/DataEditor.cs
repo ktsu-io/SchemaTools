@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Windows.Forms;
 
-namespace medmondson
+namespace ktsu.io
 {
 	internal class DataEditor
 	{
@@ -20,7 +20,9 @@ namespace medmondson
 
 		private void Resized() => Options.Save(this);
 
+#pragma warning disable IDE0060 // Remove unused parameter
 		private void Tick(float dt) => ShowDetails();
+#pragma warning restore IDE0060 // Remove unused parameter
 
 		private void Reset() => DataSource = null;
 

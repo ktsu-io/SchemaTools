@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Windows.Forms;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public class SchemaEditor
 	{

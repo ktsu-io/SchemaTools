@@ -1,8 +1,7 @@
-﻿using medmondson;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Diagnostics;
 
-namespace SchemaLib
+namespace ktsu.io
 {
 	[DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
 	[JsonConverter(typeof(JsonConverters.AsString))]

@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public class ProjectLib
 	{

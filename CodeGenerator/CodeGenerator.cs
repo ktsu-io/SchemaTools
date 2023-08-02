@@ -1,6 +1,6 @@
 ﻿using System.CodeDom.Compiler;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public class CodeGenerator : IndentedTextWriter
 	{

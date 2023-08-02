@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Converters;
 using System.Globalization;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public partial class Schema
 	{

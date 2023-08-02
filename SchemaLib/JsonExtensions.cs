@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public static class JsonExtensions
 	{

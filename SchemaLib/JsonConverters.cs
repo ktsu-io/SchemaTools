@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System.Reflection;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public class JsonConverters
 	{

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public static class Pathfinder
 	{

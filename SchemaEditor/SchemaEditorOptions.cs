@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Numerics;
 
-namespace medmondson
+namespace ktsu.io
 {
 	internal class SchemaEditorOptions
 	{

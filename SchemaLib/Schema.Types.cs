@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
-using SchemaLib;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public partial class Schema
 	{
@@ -11,7 +10,7 @@ namespace medmondson
 		public class EnumValueName : StronglyTypedString<EnumValueName> { }
 		public static class Types
 		{
-			public const string TypeQualifier = $"{nameof(medmondson)}.{nameof(Schema)}+{nameof(Types)}+";
+			public const string TypeQualifier = $"{nameof(ktsu.io)}.{nameof(Schema)}+{nameof(Types)}+";
 			public class Null : BaseType { }
 			public class Int : BaseType { }
 			public class Long : BaseType { }

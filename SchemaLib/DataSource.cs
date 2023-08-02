@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace medmondson
+namespace ktsu.io
 {
 	public class DataSource
 	{
