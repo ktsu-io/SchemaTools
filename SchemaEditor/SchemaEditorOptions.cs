@@ -1,6 +1,7 @@
 ﻿using ktsu.io;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.Numerics;
+using System.Text.Json.Serialization;
 
 namespace ktsu.io
 {
@@ -28,29 +29,41 @@ namespace ktsu.io
 				WindowState.Size = new Vector2(ImGuiApp.Window.Width, ImGuiApp.Window.Height);
 			}
 
-			using var fileStream = File.OpenWrite(FilePath);
-			using var streamWriter = new StreamWriter(fileStream);
-			Schema.JsonSerializer.Serialize(streamWriter, this);
+			string jsonString = JsonSerializer.Serialize(this, Schema.JsonSerializerOptions);
+
+			//TODO: hoist this out to some static method called something like WriteTextSafely
+			string tmpFilePath = $"{FilePath}.tmp";
+			string bkFilePath = $"{FilePath}.bk";
+			File.Delete(tmpFilePath);
+			File.Delete(bkFilePath);
+			File.WriteAllText(tmpFilePath, jsonString);
+			File.Move(FilePath, bkFilePath);
+			File.Move(tmpFilePath, FilePath);
+			File.Delete(bkFilePath);
 		}
 
-		public void Load(SchemaEditor editor)
+		public static SchemaEditorOptions LoadOrCreate()
 		{
-			Schema.EnsureDirectoryExists(FilePath);
-
-			try
+			if (!string.IsNullOrEmpty(FilePath))
 			{
-				using var streamReader = File.OpenText(FilePath);
-				Schema.JsonSerializer.Populate(streamReader, this);
+				try
+				{
+					string jsonString = File.ReadAllText(FilePath);
+					var options = JsonSerializer.Deserialize<SchemaEditorOptions>(jsonString);
+					if (options != null)
+					{
+						return options;
+					}
+				}
+				catch (FileNotFoundException)
+				{
+				}
+				catch (JsonException)
+				{
+				}
 			}
-			catch (FileNotFoundException) { }
 
-			Schema.TryLoad(CurrentSchema, out var schema);
-			editor.CurrentSchema = schema;
-
-			if (editor.CurrentSchema?.TryGetClass(CurrentClass, out var schemaClass) ?? false)
-			{
-				editor.CurrentClass = schemaClass;
-			}
+			return new();
 		}
 	}
 }

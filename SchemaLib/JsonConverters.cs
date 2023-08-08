@@ -1,12 +1,12 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Text.Json.Serialization;
 using System.Reflection;
+using System.Text.Json;
 
 namespace ktsu.io
 {
 	public class JsonConverters
 	{
-		public class AsString : JsonConverter
+		public class AsString : JsonConverter<object>
 		{
 			private const object FromString = null; //placeholder for nameof()
 
@@ -16,32 +16,31 @@ namespace ktsu.io
 					?? type.GetMethod(nameof(FromString), BindingFlags.Public | BindingFlags.Instance);
 			}
 			public override bool CanConvert(Type objectType) => GetFromStringMethod(objectType) != null;
-			public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+			public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 			{
-				var token = JToken.Load(reader);
-				var methodInfo = GetFromStringMethod(objectType);
+				var valueString = reader.GetString();
+				var methodInfo = GetFromStringMethod(typeToConvert);
 				object? obj = null;
 				if (methodInfo is not null)
 				{
 					if (!methodInfo?.IsStatic ?? false)
 					{
-						obj = Activator.CreateInstance(objectType);
+						obj = Activator.CreateInstance(typeToConvert);
 					}
 
-					obj = methodInfo?.Invoke(obj, new[] { token.Value<string>() });
+					obj = methodInfo?.Invoke(obj, new[] { valueString });
 				}
 
 				return obj;
 			}
 
-			public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+			public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
 			{
-				string token = value?.ToString() ?? string.Empty;
-				JToken.FromObject(token, serializer).WriteTo(writer);
+				writer.WriteStringValue(value?.ToString() ?? string.Empty);
 			}
 		}
 
-		public class AsSubclass : JsonConverter
+		public class AsSubclass : JsonConverter<object>
 		{
 			private const object Properties = null; //placeholder for nameof()
 			public AsSubclass() { }
@@ -52,16 +51,12 @@ namespace ktsu.io
 
 			private static bool ShouldSerialize(PropertyInfo propertyInfo)
 			{
-				bool isOptIn = propertyInfo.DeclaringType?.GetCustomAttribute<JsonObjectAttribute>()?.MemberSerialization == MemberSerialization.OptIn;
-
-				return (isOptIn && propertyInfo.GetCustomAttribute<JsonPropertyAttribute>() != null)
-					|| (!isOptIn && propertyInfo.GetCustomAttribute<JsonIgnoreAttribute>() == null);
+				return propertyInfo.GetCustomAttribute<JsonIgnoreAttribute>() == null;
 			}
 
-			public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+			public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 			{
-				var typenameToken = JToken.Load(reader);
-				string typename = typenameToken?.Value<string>() ?? string.Empty;
+				string typename = reader.GetString() ?? string.Empty;
 				string qualifiedTypename = string.IsNullOrEmpty(typename) ? typename : $"{TypeQualifier}{typename}";
 				var type = Type.GetType(qualifiedTypename);
 				if (type != null)
@@ -73,6 +68,7 @@ namespace ktsu.io
 						if (typeProperties.Any())
 						{
 							reader.Read();
+							reader.get
 							var jsonPropertiesToken = (JToken.Load(reader) as JProperty)?.Value;
 							if (jsonPropertiesToken is JObject jsonPropertiesObj)
 							{
@@ -95,7 +91,7 @@ namespace ktsu.io
 				return null;
 			}
 
-			public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+			public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
 			{
 				if (value is null)
 				{

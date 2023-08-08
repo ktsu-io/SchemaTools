@@ -1,5 +1,4 @@
 ﻿using ImGuiNET;
-using ktsu.io;
 using ktsu.io.ReusableWinForms;
 using System.Diagnostics;
 using System.Numerics;
@@ -18,15 +17,18 @@ namespace ktsu.io
 		private static void Main(string[] _)
 		{
 			SchemaEditor schemaEditor = new();
-			schemaEditor.Options.Load(schemaEditor);
 			ImGuiApp.Start(nameof(SchemaEditor), schemaEditor.Options.WindowState, schemaEditor.Tick, schemaEditor.Menu, schemaEditor.Resized);
+		}
+
+		public SchemaEditor()
+		{
+			Options = SchemaEditorOptions.LoadOrCreate();
 		}
 
 		private void Resized() => Options.Save(this);
 
 		private void Tick(float dt)
 		{
-			ShowReferences();
 			ShowEnums();
 			ShowClasses();
 			ShowMembers();
@@ -104,7 +106,7 @@ namespace ktsu.io
 				if (Schema.TryLoad(fileDialog.FileName, out var schema) && schema != null)
 				{
 					CurrentSchema = schema;
-					CurrentClass = CurrentSchema.LocalClasses.FirstOrDefault();
+					CurrentClass = CurrentSchema.Classes.FirstOrDefault();
 					Options.Save(this);
 				}
 			}
@@ -155,7 +157,7 @@ namespace ktsu.io
 					else if (!string.IsNullOrEmpty(newEnumName))
 					{
 
-						CurrentSchema.LocalEnums.Add(newEnumName, new());
+						CurrentSchema.Enums.Add(newEnumName, new());
 						Options.Save(this);
 					}
 				}
@@ -169,7 +171,7 @@ namespace ktsu.io
 				if (ImGui.Button("Add Class", new Vector2(FieldWidth, 0)))
 				{
 					string newClassName = TextPrompt.Show("New Class Name?");
-					if (string.IsNullOrEmpty(newClassName) || CurrentSchema.LocalClasses.Any(c => c.Name == newClassName))
+					if (string.IsNullOrEmpty(newClassName) || CurrentSchema.Classes.Any(c => c.Name == newClassName))
 					{
 						//TODO: throw an error popup
 						throw new NotImplementedException();
@@ -180,7 +182,7 @@ namespace ktsu.io
 						{
 							Name = (Schema.ClassName)newClassName,
 						};
-						CurrentSchema.LocalClasses.Add(schemaClass);
+						CurrentSchema.Classes.Add(schemaClass);
 						CurrentClass = schemaClass;
 						Options.Save(this);
 					}
@@ -212,63 +214,6 @@ namespace ktsu.io
 			}
 		}
 
-		private void ShowNewReference()
-		{
-			if (CurrentSchema != null)
-			{
-				if (ImGui.Button("Add Reference", new Vector2(FieldWidth, 0)))
-				{
-					if (!string.IsNullOrEmpty(CurrentSchema.FilePath))
-					{
-						using var fileDialog = new OpenFileDialog();
-						fileDialog.InitialDirectory = GetSchemaPath();
-						fileDialog.Filter = "schema files (*.schema.json)|*.schema.json|All files (*.*)|*.*";
-						fileDialog.RestoreDirectory = true;
-
-						if (fileDialog.ShowDialog() == DialogResult.OK)
-						{
-							string relativePath = Pathfinder.GetRelativePath(CurrentSchema.FilePath, fileDialog.FileName);
-							CurrentSchema.References.Add(relativePath);
-							CurrentSchema.LoadReferences();
-						}
-					}
-					else
-					{
-						MessageBox.Show("Save the schema before adding references.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-					}
-				}
-			}
-		}
-
-		private void ShowReferences()
-		{
-			if (CurrentSchema != null)
-			{
-				if (ImGui.CollapsingHeader($"{Path.GetFileName(CurrentSchema.FilePath)} References", ImGuiTreeNodeFlags.DefaultOpen))
-				{
-					ImGui.Indent();
-					ShowNewReference();
-					ImGui.NewLine();
-					foreach (string? reference in CurrentSchema.References.OrderBy(r => r).ToList())
-					{
-						string refFilename = Path.GetFileName(reference);
-						if (ImGui.Button($"X##deleteReference{reference}", new Vector2(ImGui.GetFrameHeight(), 0)))
-						{
-							CurrentSchema.References.Remove(reference);
-							CurrentSchema.LoadReferences();
-						}
-
-						ImGui.SameLine();
-						ImGui.SetNextItemWidth(FieldWidth);
-						ImGui.InputText($"##Reference{reference}", ref refFilename, 64, ImGuiInputTextFlags.ReadOnly);
-					}
-
-					ImGui.Unindent();
-					ImGui.NewLine();
-				}
-			}
-		}
-
 		private void ShowEnums()
 		{
 			if (CurrentSchema != null)
@@ -278,12 +223,12 @@ namespace ktsu.io
 					ImGui.Indent();
 					ShowNewEnum();
 					ImGui.NewLine();
-					foreach (var kvp in CurrentSchema.LocalEnums.OrderBy(e => e.Key).ToList())
+					foreach (var kvp in CurrentSchema.Enums.OrderBy(e => e.Key).ToList())
 					{
 						string enumName = kvp.Key.ToString();
 						if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
 						{
-							CurrentSchema.LocalEnums.Remove(kvp.Key);
+							CurrentSchema.Enums.Remove(kvp.Key);
 						}
 
 						ImGui.SameLine();
@@ -325,20 +270,6 @@ namespace ktsu.io
 
 					ImGui.Unindent();
 				}
-
-				if (ImGui.CollapsingHeader($"External Enums", ImGuiTreeNodeFlags.DefaultOpen))
-				{
-					ImGui.Indent();
-					foreach (var kvp in CurrentSchema.ReferencedEnums.OrderBy(e => e.Key))
-					{
-						string enumName = kvp.Key.ToString();
-						ImGui.SetNextItemWidth(FieldWidth);
-						ImGui.InputText($"##Enum{enumName}", ref enumName, 64, ImGuiInputTextFlags.ReadOnly);
-					}
-
-					ImGui.Unindent();
-					ImGui.NewLine();
-				}
 			}
 		}
 
@@ -351,11 +282,11 @@ namespace ktsu.io
 					ImGui.Indent();
 					ShowNewClass();
 					ImGui.NewLine();
-					foreach (var schemaClass in CurrentSchema.LocalClasses.OrderBy(c => c.Name).ToList())
+					foreach (var schemaClass in CurrentSchema.Classes.OrderBy(c => c.Name).ToList())
 					{
 						if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
 						{
-							CurrentSchema.LocalClasses.Remove(schemaClass);
+							CurrentSchema.Classes.Remove(schemaClass);
 						}
 
 						ImGui.SameLine();
@@ -365,21 +296,6 @@ namespace ktsu.io
 							CurrentClass = schemaClass;
 							Options.Save(this);
 						}
-					}
-
-					ImGui.Unindent();
-					ImGui.NewLine();
-				}
-
-				if (ImGui.CollapsingHeader($"External Classes", ImGuiTreeNodeFlags.DefaultOpen))
-				{
-					ImGui.Indent();
-					foreach (var schemaClass in CurrentSchema.ReferencedClasses.OrderBy(c => c.Name))
-					{
-						string name = schemaClass.Name;
-						ImGui.SetNextItemWidth(FieldWidth);
-						ImGui.SetNextItemWidth(FieldWidth);
-						ImGui.InputText($"##Class{name}", ref name, 64, ImGuiInputTextFlags.ReadOnly);
 					}
 
 					ImGui.Unindent();

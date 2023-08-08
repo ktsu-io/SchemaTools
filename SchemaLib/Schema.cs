@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Text.Json;
 using System.Globalization;
 
 namespace ktsu.io
@@ -8,27 +7,13 @@ namespace ktsu.io
 	{
 		public const string FileSuffix = ".schema.json";
 		public string FilePath { get; set; } = string.Empty;
-		[JsonProperty(nameof(Classes))]
-		public List<SchemaClass> LocalClasses { get; set; } = new();
+		public List<SchemaClass> Classes { get; set; } = new();
+		public Dictionary<EnumName, HashSet<EnumValueName>> Enums { get; set; } = new();
 
-		[JsonProperty(nameof(Enums))]
-		public Dictionary<EnumName, HashSet<EnumValueName>> LocalEnums { get; set; } = new();
-
-		public List<string> References { get; set; } = new();
-		[JsonIgnore]
-		public List<SchemaClass> ReferencedClasses { get; set; } = new();
-		[JsonIgnore]
-		public Dictionary<EnumName, HashSet<EnumValueName>> ReferencedEnums { get; set; } = new();
-		[JsonIgnore]
-		public IEnumerable<SchemaClass> Classes => LocalClasses.Concat(ReferencedClasses);
-		[JsonIgnore]
-		public IDictionary<EnumName, HashSet<EnumValueName>> Enums => LocalEnums.Concat(ReferencedEnums).ToDictionary(e => e.Key, e => e.Value);
-		public static JsonSerializerSettings JsonSerializerSettings { get; } = new()
+		public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
 		{
-			Formatting = Formatting.Indented,
-			Converters = new[] { new StringEnumConverter() },
+			WriteIndented = true,
 		};
-		public static JsonSerializer JsonSerializer { get; } = JsonSerializer.CreateDefault(JsonSerializerSettings);
 
 		public static bool TryLoad(string filePath, out Schema? schema)
 		{
@@ -38,13 +23,11 @@ namespace ktsu.io
 			{
 				try
 				{
-					using var streamReader = File.OpenText(filePath);
-					using var jsonReader = new JsonTextReader(streamReader);
-					schema = JsonSerializer.Deserialize<Schema>(jsonReader);
+					string jsonString = File.ReadAllText(filePath);
+					schema = JsonSerializer.Deserialize<Schema>(jsonString);
 					if (schema != null)
 					{
 						schema.FilePath = filePath;
-						schema.LoadReferences();
 
 						// TODO: walk every class and tell each member which class they belong to
 					}
@@ -53,7 +36,7 @@ namespace ktsu.io
 				{
 					//TODO: throw an error popup because the file has dissappeared
 				}
-				catch (JsonSerializationException)
+				catch (JsonException)
 				{
 					//TODO: throw an error popup because the file is not well formed
 				}
@@ -75,9 +58,21 @@ namespace ktsu.io
 		{
 			EnsureDirectoryExists(FilePath);
 
-			using var fileStream = File.OpenWrite(FilePath);
-			using var streamWriter = new StreamWriter(fileStream);
-			JsonSerializer.Serialize(streamWriter, this);
+			string jsonString = JsonSerializer.Serialize(this, JsonSerializerOptions);
+
+			//TODO: hoist this out to some static method called something like WriteTextSafely
+			string tmpFilePath = $"{FilePath}.tmp";
+			string bkFilePath = $"{FilePath}.bk";
+			File.Delete(tmpFilePath);
+			File.Delete(bkFilePath);
+			File.WriteAllText(tmpFilePath, jsonString);
+			try
+			{
+				File.Move(FilePath, bkFilePath);
+			}
+			catch (FileNotFoundException) { }
+			File.Move(tmpFilePath, FilePath);
+			File.Delete(bkFilePath);
 		}
 
 		public static string MakePascalCase(string input)
@@ -90,46 +85,6 @@ namespace ktsu.io
 		}
 
 		public static string LowerCaseFirst(string str) => str[..1].ToLower() + str[1..];
-
-		public void LoadReferences()
-		{
-			ReferencedClasses.Clear();
-			ReferencedEnums.Clear();
-			var loadedFiles = new HashSet<string>
-			{
-				Path.GetFullPath(FilePath),
-			};
-			LoadReferencesInternal(this, loadedFiles);
-		}
-
-		private void LoadReferencesInternal(Schema schema, HashSet<string> loadedFiles)
-		{
-			foreach (string referencePath in schema.References)
-			{
-				string? dirName = Path.GetDirectoryName(schema.FilePath);
-				if (dirName != null)
-				{
-					string absolutePath = Path.Combine(dirName, referencePath);
-					if (loadedFiles.Add(Path.GetFullPath(absolutePath)))
-					{
-						if (TryLoad(absolutePath, out var otherSchema) && otherSchema != null)
-						{
-							foreach (var schemaClass in otherSchema.LocalClasses)
-							{
-								ReferencedClasses.Add(schemaClass);
-							}
-
-							foreach (var kvp in otherSchema.LocalEnums)
-							{
-								ReferencedEnums.Add(kvp.Key, kvp.Value);
-							}
-
-							LoadReferencesInternal(otherSchema, loadedFiles);
-						}
-					}
-				}
-			}
-		}
 
 		public bool TryGetClass(ClassName? className, out SchemaClass? schemaClass)
 		{

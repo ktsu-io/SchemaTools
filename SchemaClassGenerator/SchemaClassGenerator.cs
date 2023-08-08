@@ -76,7 +76,7 @@
 				Console.WriteLine($"Reading: {Path.GetFileName(schemaFilePath)}");
 				if (Schema.TryLoad(schemaFilePath, out var schema) && schema != null)
 				{
-					foreach (var enumKVP in schema.LocalEnums)
+					foreach (var enumKVP in schema.Enums)
 					{
 						using (var code = new CodeGenerator())
 						{
@@ -103,7 +103,7 @@
 						}
 					}
 
-					foreach (var schemaClass in schema.LocalClasses)
+					foreach (var schemaClass in schema.Classes)
 					{
 						using (var code = new CodeGenerator())
 						{
