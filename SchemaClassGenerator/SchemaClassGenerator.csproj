@@ -8,6 +8,7 @@
 		<BaseOutputPath>..\bin</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+		<RootNamespace>ktsu.io.SchemaTools</RootNamespace>
 	</PropertyGroup>
 
   <ItemGroup>

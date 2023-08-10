@@ -1,18 +1,33 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
-	public class SchemaMember
+	public class SchemaMember : SchemaClassChild
 	{
-		public Schema.MemberName Name { get; set; } = (Schema.MemberName)string.Empty;
-		[JsonProperty(ReferenceLoopHandling = ReferenceLoopHandling.Serialize)]
-		public Schema.Types.BaseType Type { get; set; } = new Schema.Types.Null();
+		[JsonInclude]
+		public MemberName MemberName { get; private set; } = new();
+
+		[JsonInclude]
+		public Schema.Types.BaseType Type { get; private set; } = new Schema.Types.None();
 		public string Description { get; set; } = string.Empty;
+
+		public void Rename(MemberName memberName) => MemberName = memberName;
+
+		public void SetType(Schema.Types.BaseType type)
+		{
+			Type = type;
+			Type.AssosciateWith(this);
+		}
 	}
 
-	public class SchemaMemberProperties
+	public class RootSchemaMember : SchemaMember
 	{
-		protected SchemaMember SchemaMember { get; }
-		public SchemaMemberProperties(SchemaMember schemaMember) => SchemaMember = schemaMember;
+		private MemberName Root { get; } = (MemberName)nameof(Root);
+
+		[JsonInclude]
+		public new MemberName MemberName => Root;
+
+		[Obsolete("Not supported on the root schema member", true)]
+		public new void Rename(MemberName _) => throw new NotSupportedException("Not supported on the root schema member");
 	}
 }

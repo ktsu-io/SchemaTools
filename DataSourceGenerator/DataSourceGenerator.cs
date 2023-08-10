@@ -1,5 +1,7 @@
-﻿namespace ktsu.io
+﻿namespace ktsu.io.SchemaTools
 {
+	using ktsu.io.StrongPaths;
+
 	internal class DataSourceGenerator
 	{
 		private const string InputPathKey = "Data";
@@ -66,43 +68,45 @@
 
 			var headerList = new List<string>();
 			var classList = new List<string>();
-			foreach (var dataFilePath in files)
+			foreach (string p in files)
 			{
-				Console.WriteLine($"Reading: {Path.GetFileName(dataFilePath)}");
-				var dataSource = DataSource.Load(dataFilePath);
-
-				using (var code = new CodeGenerator())
+				var dataFilePath = (FilePath)p;
+				Console.WriteLine($"Reading: {dataFilePath.FileName}");
+				if (DataSource.TryLoad(dataFilePath, out var dataSource) && dataSource is not null)
 				{
-					var filename = $"{dataSource.Name}.gen.h";
-					headerList.Add(filename);
-					var filePath = Path.Combine(OutputPath, filename);
-					var relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
-					Console.WriteLine($"Generating: {filename}");
-					GenerateDataSourceHeader(dataSource, code);
-					File.WriteAllText(filePath, code.ToString());
-					project.AddCPPFile(relativePath);
-					filters.AddCPPFile(relativePath);
-				}
+					using (var code = new CodeGenerator())
+					{
+						string filename = $"{dataSource.Name}.gen.h";
+						headerList.Add(filename);
+						string filePath = Path.Combine(OutputPath, filename);
+						var relativePath = AnyRelativePath.Make<RelativePath>((FilePath)ProjectPath, (FilePath)filePath);
+						Console.WriteLine($"Generating: {filename}");
+						GenerateDataSourceHeader(dataSource, code);
+						File.WriteAllText(filePath, code.ToString());
+						project.AddCPPFile(relativePath);
+						filters.AddCPPFile(relativePath);
+					}
 
-				using (var code = new CodeGenerator())
-				{
-					classList.Add(dataSource.Name);
-					var filename = $"{dataSource.Name}.gen.cpp";
-					var filePath = Path.Combine(OutputPath, filename);
-					var relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
-					Console.WriteLine($"Generating: {filename}");
-					GenerateDataSourceCode(dataSource, code);
-					File.WriteAllText(filePath, code.ToString());
-					project.AddCPPFile(relativePath);
-					filters.AddCPPFile(relativePath);
+					using (var code = new CodeGenerator())
+					{
+						classList.Add(dataSource.Name);
+						string filename = $"{dataSource.Name}.gen.cpp";
+						string filePath = Path.Combine(OutputPath, filename);
+						string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
+						Console.WriteLine($"Generating: {filename}");
+						GenerateDataSourceCode(dataSource, code);
+						File.WriteAllText(filePath, code.ToString());
+						project.AddCPPFile(relativePath);
+						filters.AddCPPFile(relativePath);
+					}
 				}
 			}
 
 			using (var code = new CodeGenerator())
 			{
-				var filename = $"DataSources.gen.h";
-				var filePath = Path.Combine(OutputPath, filename);
-				var relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
+				string filename = $"DataSources.gen.h";
+				string filePath = Path.Combine(OutputPath, filename);
+				string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 				Console.WriteLine($"Generating: {filename}");
 				code.WriteLine("#pragma once");
 				code.WriteLine(FileHeader);
@@ -132,7 +136,7 @@
 							indentString += "\t";
 						}
 
-						var initializerString = string.Join($",\r\n{indentString}", initializerList);
+						string initializerString = string.Join($",\r\n{indentString}", initializerList);
 						code.WriteLine(initializerString);
 						code.Indent--;
 						code.WriteLine("{}");
@@ -155,9 +159,9 @@
 
 			using (var code = new CodeGenerator())
 			{
-				var filename = $"DataSources.gen.cpp";
-				var filePath = Path.Combine(OutputPath, filename);
-				var relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
+				string filename = $"DataSources.gen.cpp";
+				string filePath = Path.Combine(OutputPath, filename);
+				string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 				Console.WriteLine($"Generating: {filename}");
 
 				code.WriteLine($"#include \"DataSources.gen.h\"");
@@ -211,9 +215,10 @@
 
 			code.WriteLine("#pragma once");
 			code.WriteLine(FileHeader);
-			if (!string.IsNullOrEmpty(array?.Container))
+			var container = array?.Container ?? new();
+			if (!string.IsNullOrEmpty(container))
 			{
-				code.WriteLine($"#include \"{array.Container}.h\"");
+				code.WriteLine($"#include \"{container}.h\"");
 			}
 
 			code.WriteLine("#include <string>");
@@ -265,21 +270,20 @@
 		{
 			if (schemaMember.Type is Schema.Types.Array array)
 			{
-				var elementTypeString = $"SchemaClasses::{array.ElementType}";
+				string elementTypeString = $"SchemaClasses::{array.ElementType}";
 				var container = array.Container;
 				if (string.IsNullOrEmpty(container))
 				{
-					container = "vector";
+					container = ContainerName.Vector;
 				}
 
-				var keyMember = array.GetKeyMember();
-				if (keyMember != null)
+				if (array.TryGetKeyMember(out var keyMember) && keyMember != null)
 				{
 					elementTypeString = $"{keyMember.Type}, {elementTypeString}";
 				}
 
-				var pointer = array.ElementType.IsObject ? "*" : string.Empty;
-				code.WriteLine($"{container}<{elementTypeString}{pointer}> {schemaMember.Name};");
+				string pointer = array.ElementType.IsObject ? "*" : string.Empty;
+				code.WriteLine($"{container}<{elementTypeString}{pointer}> {schemaMember.MemberName};");
 			}
 			else if (schemaMember.Type.IsObject)
 			{
@@ -291,7 +295,7 @@
 		{
 			if (InputPath != null)
 			{
-				var publishedFilePathRelative = Pathfinder.GetRelativePath(InputPath, dataSource.FilePath).Replace("\\", "\\\\");
+				string publishedFilePathRelative = Pathfinder.GetRelativePath(InputPath, dataSource.FilePath).Replace("\\", "\\\\");
 				code.WriteLine(FileHeader);
 				code.WriteLine($"#include \"{dataSource.Name}.gen.h\"");
 				code.WriteLine($"#include \"ColumnStack.gen.h\"");

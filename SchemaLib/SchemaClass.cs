@@ -1,14 +1,40 @@
-﻿namespace ktsu.io
-{
-	public class SchemaClass
-	{
-		public Schema.ClassName Name { get; set; } = (Schema.ClassName)string.Empty;
-		public List<SchemaMember> Members { get; set; } = new List<SchemaMember>();
+﻿using System.Text.Json.Serialization;
 
-		public bool TryGetMember(Schema.MemberName? memberName, out SchemaMember? schemaMember)
+namespace ktsu.io.SchemaTools
+{
+	public class SchemaClass : SchemaChild
+	{
+		[JsonInclude]
+		public ClassName ClassName { get; private set; } = new();
+
+		[JsonPropertyName("Members")]
+		private List<SchemaMember> MemberList { get; set; } = new();
+
+		public IReadOnlyList<SchemaMember> Members => MemberList;
+
+		public bool TryAddMember(MemberName memberName)
 		{
-			schemaMember = Members.FirstOrDefault(c => c.Name == memberName);
+
+			if (!string.IsNullOrEmpty(memberName) && !MemberList.Any(m => m.MemberName == memberName))
+			{
+				SchemaMember schemaMember = new();
+				schemaMember.Rename(memberName);
+				schemaMember.AssosciateWith(this);
+				MemberList.Add(schemaMember);
+				return true;
+			}
+
+			return false;
+		}
+
+		public void Rename(ClassName className) => ClassName = className;
+
+		public bool TryGetMember(MemberName? memberName, out SchemaMember? schemaMember)
+		{
+			schemaMember = MemberList.FirstOrDefault(c => c.MemberName == memberName);
 			return schemaMember != null;
 		}
+
+		public void RemoveMember(SchemaMember schemaMember) => MemberList.Remove(schemaMember);
 	}
 }

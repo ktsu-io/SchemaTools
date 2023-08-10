@@ -1,15 +1,15 @@
 ﻿using Newtonsoft.Json;
 using System.Numerics;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	internal class DataEditorOptions
 	{
 		[JsonIgnore]
-		public static string FileName => $"{nameof(DataEditorOptions)}.json";
+		public static FileName FileName => (FileName)$"{nameof(DataEditorOptions)}.json";
 		[JsonIgnore]
-		public static string FilePath => Path.Combine(Pathfinder.AppData, Pathfinder.ProjectName, FileName);
-		public string? CurrentDataSource { get; set; }
+		public static FilePath FilePath => (FilePath)Path.Combine(Pathfinder.AppData, Pathfinder.ProjectName, FileName);
+		public FilePath CurrentDataSourcePath { get; set; } = new();
 		public string WindowState { get; set; } = "Normal";
 		public Vector2 WindowPos { get; set; } = new Vector2(50, 50);
 		public Vector2 WindowSize { get; set; } = new Vector2(1600, 1000);
@@ -21,7 +21,7 @@ namespace ktsu.io
 
 		private static void EnsureDirectoryExists()
 		{
-			var dirName = Path.GetDirectoryName(FilePath);
+			string? dirName = Path.GetDirectoryName(FilePath);
 			if (!string.IsNullOrEmpty(dirName))
 			{
 				Directory.CreateDirectory(dirName);
@@ -32,7 +32,7 @@ namespace ktsu.io
 		{
 			EnsureDirectoryExists();
 
-			CurrentDataSource = editor.DataSource?.FilePath;
+			CurrentDataSourcePath = editor.DataSource?.FilePath ?? new();
 
 			if (ImGuiApp.Window != null)
 			{
@@ -65,9 +65,9 @@ namespace ktsu.io
 			ImGuiApp.InitialWindowSize = WindowSize;
 			ImGuiApp.InitialWindowPos = WindowPos;
 
-			if (!string.IsNullOrEmpty(CurrentDataSource))
+			if (DataSource.TryLoad(CurrentDataSourcePath, out var dataSource))
 			{
-				editor.DataSource = DataSource.Load(CurrentDataSource);
+				editor.DataSource = dataSource;
 			}
 		}
 	}

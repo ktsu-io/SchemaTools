@@ -8,7 +8,7 @@ namespace ktsu.io
 		{
 		}
 
-		override public string ToString() => InnerWriter.ToString() ?? string.Empty;
+		public override string ToString() => InnerWriter.ToString() ?? string.Empty;
 
 		public new void NewLine() => WriteLineNoTabs(string.Empty);
 	}

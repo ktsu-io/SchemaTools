@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	public class ProjectLib
 	{
@@ -46,7 +46,7 @@ namespace ktsu.io
 
 				foreach (var childNode in nodesToRemove)
 				{
-					var filePath = childNode.Attributes?[Include]?.Value;
+					string? filePath = childNode.Attributes?[Include]?.Value;
 					Console.WriteLine($"Removing: {Path.GetFileName(filePath)} from {Path.GetFileName(ProjectPath)}");
 					node.RemoveChild(childNode);
 				}
@@ -79,10 +79,10 @@ namespace ktsu.io
 
 				foreach (var childNode in nodesToRemove)
 				{
-					var filePath = childNode.Attributes?[Include]?.Value;
+					string? filePath = childNode.Attributes?[Include]?.Value;
 					Console.WriteLine($"Removing: {Path.GetFileName(filePath)} from {Path.GetFileName(ProjectPath)}");
 					node.RemoveChild(childNode);
-					var dirName = Path.GetDirectoryName(ProjectPath);
+					string? dirName = Path.GetDirectoryName(ProjectPath);
 					if (dirName != null && filePath != null)
 					{
 						File.Delete(Path.Combine(dirName, filePath));

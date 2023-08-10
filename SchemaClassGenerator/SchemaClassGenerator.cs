@@ -1,5 +1,7 @@
-﻿namespace ktsu.io
+﻿namespace ktsu.io.SchemaTools
 {
+	using ktsu.io.StrongPaths;
+
 	public class SchemaClassGenerator
 	{
 		private const string InputPathKey = "Schema";
@@ -74,17 +76,17 @@
 			foreach (string schemaFilePath in files)
 			{
 				Console.WriteLine($"Reading: {Path.GetFileName(schemaFilePath)}");
-				if (Schema.TryLoad(schemaFilePath, out var schema) && schema != null)
+				if (Schema.TryLoad((FilePath)schemaFilePath, out var schema) && schema != null)
 				{
-					foreach (var enumKVP in schema.Enums)
+					foreach (var schemaEnum in schema.Enums)
 					{
 						using (var code = new CodeGenerator())
 						{
-							string filename = $"Enum{enumKVP.Key}.gen.h";
+							string filename = $"Enum{schemaEnum.EnumName}.gen.h";
 							string filePath = Path.Combine(OutputPath, filename);
 							string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 							Console.WriteLine($"Generating: {filename}");
-							GenerateEnumHeader(enumKVP, code);
+							GenerateEnumHeader(schemaEnum, code);
 							File.WriteAllText(filePath, code.ToString());
 							project.AddCPPFile(relativePath);
 							filters.AddCPPFile(relativePath);
@@ -92,11 +94,11 @@
 
 						using (var code = new CodeGenerator())
 						{
-							string filename = $"Enum{enumKVP.Key}.gen.cpp";
+							string filename = $"Enum{schemaEnum.EnumName}.gen.cpp";
 							string filePath = Path.Combine(OutputPath, filename);
 							string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 							Console.WriteLine($"Generating: {filename}");
-							GenerateEnumSource(enumKVP, code);
+							GenerateEnumSource(schemaEnum, code);
 							File.WriteAllText(filePath, code.ToString());
 							project.AddCPPFile(relativePath);
 							filters.AddCPPFile(relativePath);
@@ -107,7 +109,7 @@
 					{
 						using (var code = new CodeGenerator())
 						{
-							string filename = $"{schemaClass.Name}.gen.h";
+							string filename = $"{schemaClass.ClassName}.gen.h";
 							string filePath = Path.Combine(OutputPath, filename);
 							string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 							Console.WriteLine($"Generating: {filename}");
@@ -119,7 +121,7 @@
 
 						using (var code = new CodeGenerator())
 						{
-							string filename = $"{schemaClass.Name}.gen.cpp";
+							string filename = $"{schemaClass.ClassName}.gen.cpp";
 							string filePath = Path.Combine(OutputPath, filename);
 							string relativePath = Pathfinder.GetRelativePath(ProjectPath, filePath);
 							Console.WriteLine($"Generating: {filename}");
@@ -268,17 +270,17 @@
 				schemaClass.Members.ForEach(m => GenerateSchemaMemberFwdDecl(m, code, usedDecls));
 
 				code.NewLine();
-				code.WriteLine($"class {schemaClass.Name}");
+				code.WriteLine($"class {schemaClass.ClassName}");
 				using (new Scope(code))
 				{
 					code.Indent--;
 					code.WriteLine("public:");
 					code.Indent++;
-					code.WriteLine($"{schemaClass.Name}* DeepCopy() const;");
-					code.WriteLine($"bool DeepEquals({schemaClass.Name}* other) const;");
+					code.WriteLine($"{schemaClass.ClassName}* DeepCopy() const;");
+					code.WriteLine($"bool DeepEquals({schemaClass.ClassName}* other) const;");
 					code.WriteLine("void Deserialize(Json::Value& jsonObj);");
 					code.WriteLine("void Serialize(Json::Value& jsonObj) const;");
-					code.WriteLine($"static {schemaClass.Name}* Make();");
+					code.WriteLine($"static {schemaClass.ClassName}* Make();");
 					code.WriteLine("void Destroy();");
 					code.WriteLine("void ImGui();");
 
@@ -294,33 +296,25 @@
 			{
 				string elementTypeString = array.ElementType.ToString();
 				string container = array.Container ?? "vector";
-				if (array.IsComplexArray)
+				string pointer = array.IsComplexArray ? "*" : string.Empty;
+				if (array.TryGetKeyMember(out var keyMember) && keyMember is not null)
 				{
-					var keyMember = array.GetKeyMember();
-					if (keyMember != null)
-					{
-						elementTypeString = $"{keyMember.Type}, {elementTypeString}";
-					}
-
-					code.WriteLine($"{container}<{elementTypeString}*> {schemaMember.Name};");
+					elementTypeString = $"{keyMember.Type}, {elementTypeString}";
 				}
-				else
-				{
-					code.WriteLine($"{container}<{elementTypeString}> {schemaMember.Name};");
 
-				}
+				code.WriteLine($"{container}<{elementTypeString}{pointer}> {schemaMember.MemberName};");
 			}
 			else if (schemaMember.Type is Schema.Types.Enum enumType)
 			{
-				code.WriteLine($"{enumType.Name} {schemaMember.Name};");
+				code.WriteLine($"{enumType.EnumName} {schemaMember.MemberName};");
 			}
 			else if (schemaMember.Type.IsPrimitive)
 			{
-				code.WriteLine($"{schemaMember.Type} {schemaMember.Name};");
+				code.WriteLine($"{schemaMember.Type} {schemaMember.MemberName};");
 			}
 			else if (schemaMember.Type.IsObject)
 			{
-				code.WriteLine($"{schemaMember.Type}* {schemaMember.Name} = nullptr;");
+				code.WriteLine($"{schemaMember.Type}* {schemaMember.MemberName} = nullptr;");
 			}
 			else
 			{
@@ -366,7 +360,7 @@
 		private static void GenerateSchemaClassSource(SchemaClass schemaClass, CodeGenerator code)
 		{
 			code.WriteLine(FileHeader);
-			code.WriteLine($"#include \"{schemaClass.Name}.gen.h\"");
+			code.WriteLine($"#include \"{schemaClass.ClassName}.gen.h\"");
 
 			var usedIncludes = new HashSet<string>();
 			schemaClass.Members.ForEach(m => GenerateIncludes(m, code, usedIncludes));
@@ -383,7 +377,7 @@
 			code.WriteLine("using vector = std::vector<T>;");
 
 			code.NewLine();
-			code.WriteLine($"bool {schemaClass.Name}::DeepEquals({schemaClass.Name}* other) const");
+			code.WriteLine($"bool {schemaClass.ClassName}::DeepEquals({schemaClass.ClassName}* other) const");
 			using (new Scope(code))
 			{
 				code.WriteLine($"bool equal = true");
@@ -394,50 +388,50 @@
 			}
 
 			code.NewLine();
-			code.WriteLine($"{schemaClass.Name}* {schemaClass.Name}::DeepCopy() const");
+			code.WriteLine($"{schemaClass.ClassName}* {schemaClass.ClassName}::DeepCopy() const");
 			using (new Scope(code))
 			{
-				code.WriteLine($"auto newObj = new {schemaClass.Name}();");
+				code.WriteLine($"auto newObj = new {schemaClass.ClassName}();");
 				schemaClass.Members.ForEach(m => GenerateDeepCopyMember(m, code));
 				code.WriteLine($"return newObj;");
 			}
 
 			code.NewLine();
-			code.WriteLine($"void {schemaClass.Name}::Deserialize(Json::Value& jsonObj)");
+			code.WriteLine($"void {schemaClass.ClassName}::Deserialize(Json::Value& jsonObj)");
 			using (new Scope(code))
 			{
 				schemaClass.Members.ForEach(m => GenerateDeserializeMember(m, code));
 			}
 
 			code.NewLine();
-			code.WriteLine($"void {schemaClass.Name}::Serialize(Json::Value& jsonObj) const");
+			code.WriteLine($"void {schemaClass.ClassName}::Serialize(Json::Value& jsonObj) const");
 			using (new Scope(code))
 			{
 				schemaClass.Members.ForEach(m => GenerateSerializeMember(m, code));
 			}
 
 			code.NewLine();
-			code.WriteLine($"{schemaClass.Name}* {schemaClass.Name}::Make()");
+			code.WriteLine($"{schemaClass.ClassName}* {schemaClass.ClassName}::Make()");
 			using (new Scope(code))
 			{
-				code.WriteLine($"auto instance = new {schemaClass.Name}();");
+				code.WriteLine($"auto instance = new {schemaClass.ClassName}();");
 				schemaClass.Members.ForEach(m => GenerateMakeMember(m, code));
 				code.WriteLine($"return instance;");
 
 			}
 
 			code.NewLine();
-			code.WriteLine($"void {schemaClass.Name}::Destroy()");
+			code.WriteLine($"void {schemaClass.ClassName}::Destroy()");
 			using (new Scope(code))
 			{
 				schemaClass.Members.ForEach(m => GenerateDestroyMember(m, code));
 			}
 
 			code.NewLine();
-			code.WriteLine($"void {schemaClass.Name}::ImGui()");
+			code.WriteLine($"void {schemaClass.ClassName}::ImGui()");
 			using (new Scope(code))
 			{
-				code.WriteLine($"ColumnStack::Push(2, \"SchemaClasses:{schemaClass.Name}\");");
+				code.WriteLine($"ColumnStack::Push(2, \"SchemaClasses:{schemaClass.ClassName}\");");
 				schemaClass.Members.Where(m => !m.Type.IsContainer && !m.Type.IsObject).ToList().ForEach(m => GenerateImGuiEditField(m, code));
 				code.WriteLine($"ColumnStack::Pop();");
 				schemaClass.Members.Where(m => m.Type.IsContainer || m.Type.IsObject).ToList().ForEach(m => GenerateImGuiEditField(m, code));
@@ -448,11 +442,11 @@
 		{
 			if (schemaMember.Type.IsObject)
 			{
-				code.WriteLine($"if({schemaMember.Name} != nullptr)");
+				code.WriteLine($"if({schemaMember.MemberName} != nullptr)");
 				using (new Scope(code))
 				{
-					code.WriteLine($"{schemaMember.Name}->Destroy();");
-					code.WriteLine($"delete {schemaMember.Name};");
+					code.WriteLine($"{schemaMember.MemberName}->Destroy();");
+					code.WriteLine($"delete {schemaMember.MemberName};");
 				}
 			}
 			else if (schemaMember.Type is Schema.Types.Array array)
@@ -464,7 +458,7 @@
 					elem = "[key, elem]";
 				}
 
-				code.WriteLine($"for(auto& {elem} : {schemaMember.Name})");
+				code.WriteLine($"for(auto& {elem} : {schemaMember.MemberName})");
 				using (new Scope(code))
 				{
 					code.WriteLine($"elem->Destroy();");
@@ -474,7 +468,7 @@
 
 			if (schemaMember.Type.IsArray)
 			{
-				code.WriteLine($"{schemaMember.Name}.clear();");
+				code.WriteLine($"{schemaMember.MemberName}.clear();");
 			}
 		}
 
@@ -482,7 +476,7 @@
 		{
 			if (schemaMember.Type.IsObject)
 			{
-				code.WriteLine($"instance->{schemaMember.Name} = {schemaMember.Type}::Make();");
+				code.WriteLine($"instance->{schemaMember.MemberName} = {schemaMember.Type}::Make();");
 			}
 		}
 
@@ -523,24 +517,24 @@
 				using (new Scope(code))
 				{
 					code.WriteLine($"if(!equal) return false;");
-					code.WriteLine($"equal &= {schemaMember.Name}.size() == other->{schemaMember.Name}.size();");
+					code.WriteLine($"equal &= {schemaMember.MemberName}.size() == other->{schemaMember.MemberName}.size();");
 					code.WriteLine($"int i=0;");
-					code.WriteLine($"while(equal && i<{schemaMember.Name}.size())");
+					code.WriteLine($"while(equal && i<{schemaMember.MemberName}.size())");
 					using (new Scope(code))
 					{
-						code.WriteLine($"const auto& {elem} = {schemaMember.Name}.at(i);");
-						code.WriteLine($"const auto& {otherElem} = other->{schemaMember.Name}.at(i);");
+						code.WriteLine($"const auto& {elem} = {schemaMember.MemberName}.at(i);");
+						code.WriteLine($"const auto& {otherElem} = other->{schemaMember.MemberName}.at(i);");
 						code.WriteLine($"equal &= {key}elem->DeepEquals(otherElem);");
 					}
 				}
 			}
 			else if (schemaMember.Type.IsBuiltIn)
 			{
-				code.WriteLine($"&& ({schemaMember.Name} == other->{schemaMember.Name})");
+				code.WriteLine($"&& ({schemaMember.MemberName} == other->{schemaMember.MemberName})");
 			}
 			else
 			{
-				code.WriteLine($"&& {schemaMember.Name}->DeepEquals(other->{schemaMember.Name})");
+				code.WriteLine($"&& {schemaMember.MemberName}->DeepEquals(other->{schemaMember.MemberName})");
 			}
 		}
 
@@ -566,28 +560,28 @@
 					key = "key, ";
 				}
 
-				code.WriteLine($"for(auto& {elem}: {schemaMember.Name})");
+				code.WriteLine($"for(auto& {elem}: {schemaMember.MemberName})");
 				using (new Scope(code))
 				{
-					code.WriteLine($"newObj->{schemaMember.Name}.{addFunc}({key}elem->DeepCopy());");
+					code.WriteLine($"newObj->{schemaMember.MemberName}.{addFunc}({key}elem->DeepCopy());");
 				}
 			}
 			else if (schemaMember.Type.IsBuiltIn)
 			{
-				code.WriteLine($"newObj->{schemaMember.Name} = {schemaMember.Name};");
+				code.WriteLine($"newObj->{schemaMember.MemberName} = {schemaMember.MemberName};");
 			}
 			else
 			{
-				code.WriteLine($"newObj->{schemaMember.Name} = {schemaMember.Name}->DeepCopy();");
+				code.WriteLine($"newObj->{schemaMember.MemberName} = {schemaMember.MemberName}->DeepCopy();");
 			}
 		}
 
 		public static void GenerateDeserializeMember(SchemaMember schemaMember, CodeGenerator code, string? overrideName = null)
 		{
-			var name = schemaMember.Name;
+			var name = schemaMember.MemberName;
 			if (!string.IsNullOrEmpty(overrideName))
 			{
-				name = (Schema.MemberName)overrideName;
+				name = (MemberName)overrideName;
 			}
 
 			if (schemaMember.Type is Schema.Types.Array array)
@@ -629,7 +623,7 @@
 			}
 			else if (schemaMember.Type is Schema.Types.Enum enumType)
 			{
-				code.WriteLine($"{name} = {enumType.Name}::FromString(jsonObj[\"{name}\"].asString());");
+				code.WriteLine($"{name} = {enumType.EnumName}::FromString(jsonObj[\"{name}\"].asString());");
 			}
 			else if (schemaMember.Type.IsPrimitive)
 			{
@@ -662,7 +656,7 @@
 						elem = "[key, elem]";
 					}
 
-					code.WriteLine($"for(auto& {elem} : {schemaMember.Name})");
+					code.WriteLine($"for(auto& {elem} : {schemaMember.MemberName})");
 					using (new Scope(code))
 					{
 						if (array.ElementType.IsPrimitive)
@@ -678,25 +672,25 @@
 						}
 					}
 
-					code.WriteLine($"jsonObj[\"{schemaMember.Name}\"] = arr;");
+					code.WriteLine($"jsonObj[\"{schemaMember.MemberName}\"] = arr;");
 				}
 			}
 			else if (schemaMember.Type is Schema.Types.Enum enumType)
 			{
-				code.WriteLine($"jsonObj[\"{schemaMember.Name}\"] = {enumType.Name}::ToString({schemaMember.Name});");
+				code.WriteLine($"jsonObj[\"{schemaMember.MemberName}\"] = {enumType.EnumName}::ToString({schemaMember.MemberName});");
 			}
 			else if (schemaMember.Type.IsPrimitive)
 			{
 				string cast = GenerateSerializeCastForType(schemaMember.Type);
-				code.WriteLine($"jsonObj[\"{schemaMember.Name}\"] = Json::Value({cast}{schemaMember.Name});");
+				code.WriteLine($"jsonObj[\"{schemaMember.MemberName}\"] = Json::Value({cast}{schemaMember.MemberName});");
 			}
 			else
 			{
 				using (new Scope(code))
 				{
 					code.WriteLine($"auto obj = Json::Value(Json::objectValue);");
-					code.WriteLine($"{schemaMember.Name}->Serialize(obj);");
-					code.WriteLine($"jsonObj[\"{schemaMember.Name}\"] = obj;");
+					code.WriteLine($"{schemaMember.MemberName}->Serialize(obj);");
+					code.WriteLine($"jsonObj[\"{schemaMember.MemberName}\"] = obj;");
 				}
 			}
 		}
@@ -723,9 +717,9 @@
 		{
 			if (schemaMember.Type is Schema.Types.Enum enumType)
 			{
-				if (usedIncludes.Add(enumType.Name))
+				if (usedIncludes.Add(enumType.EnumName))
 				{
-					code.WriteLine($"#include \"Enum{enumType.Name}.gen.h\"");
+					code.WriteLine($"#include \"Enum{enumType.EnumName}.gen.h\"");
 				}
 			}
 		}
@@ -741,7 +735,7 @@
 			}
 		}
 
-		private static void GenerateEnumHeader(KeyValuePair<Schema.EnumName, HashSet<Schema.EnumValueName>> enumKVP, CodeGenerator code)
+		private static void GenerateEnumHeader(SchemaEnum schemaEnum, CodeGenerator code)
 		{
 			code.WriteLine("#pragma once");
 			code.WriteLine(FileHeader);
@@ -755,36 +749,38 @@
 				code.WriteLine("template<class T>");
 				code.WriteLine("using vector = std::vector<T>;");
 				code.NewLine();
-				var enumName = enumKVP.Key;
-				var enumValues = enumKVP.Value.ToList();
-				code.WriteLine($"struct {enumName}");
+
+				code.WriteLine($"struct {schemaEnum.EnumName}");
 				using (new Scope(code))
 				{
 					code.WriteLine($"enum class Type");
 					using (new Scope(code))
 					{
-						enumValues.ForEach(v => code.WriteLine($"{v},"));
+						foreach (var enumValue in schemaEnum.Values)
+						{
+							code.WriteLine($"{enumValue},");
+						}
 					}
 
 					code.NewLine();
 					code.WriteLine($"using enum Type;");
-					code.WriteLine($"{enumName}() = default;");
-					code.WriteLine($"{enumName}(const {enumName}& other) = default;");
-					code.WriteLine($"{enumName}(Type&& other) {{ m_value = std::move(other); }}");
+					code.WriteLine($"{schemaEnum.EnumName}() = default;");
+					code.WriteLine($"{schemaEnum.EnumName}(const {schemaEnum.EnumName}& other) = default;");
+					code.WriteLine($"{schemaEnum.EnumName}(Type&& other) {{ m_value = std::move(other); }}");
 					code.WriteLine($"operator Type() const {{ return m_value; }}");
 					code.WriteLine($"operator int() const {{ return (int)m_value; }}");
-					code.WriteLine($"bool operator==(const {enumName}& other) const {{ return m_value == other.m_value; }}");
+					code.WriteLine($"bool operator==(const {schemaEnum.EnumName}& other) const {{ return m_value == other.m_value; }}");
 					code.WriteLine($"bool operator==(const Type& other) const {{ return m_value == other; }}");
 
 					code.NewLine();
-					code.WriteLine($"static string GetName() {{ return \"{enumName}\"; }}");
+					code.WriteLine($"static string GetName() {{ return \"{schemaEnum.EnumName}\"; }}");
 					code.WriteLine($"static const vector<string>& GetNames();");
-					code.WriteLine($"static const vector<{enumName}>& GetValues();");
+					code.WriteLine($"static const vector<{schemaEnum.EnumName}>& GetValues();");
 
 					code.NewLine();
-					code.WriteLine($"static string ToString({enumName} value);");
+					code.WriteLine($"static string ToString({schemaEnum.EnumName} value);");
 					code.WriteLine($"static string ToString(Type value);");
-					code.WriteLine($"static {enumName} FromString(const string& value);");
+					code.WriteLine($"static {schemaEnum.EnumName} FromString(const string& value);");
 
 					code.NewLine();
 					code.WriteLine($"template<typename T>");
@@ -799,12 +795,10 @@
 			}
 		}
 
-		private static void GenerateEnumSource(KeyValuePair<Schema.EnumName, HashSet<Schema.EnumValueName>> enumKVP, CodeGenerator code)
+		private static void GenerateEnumSource(SchemaEnum schemaEnum, CodeGenerator code)
 		{
-			var enumName = enumKVP.Key;
-			var enumValues = enumKVP.Value.ToList();
 			code.WriteLine(FileHeader);
-			code.WriteLine($"#include \"Enum{enumName}.gen.h\"");
+			code.WriteLine($"#include \"Enum{schemaEnum.EnumName}.gen.h\"");
 
 			code.NewLine();
 			code.WriteLine("#include <stdexcept>");
@@ -820,48 +814,68 @@
 				code.WriteLine("using vector = std::vector<T>;");
 
 				code.NewLine();
-				code.WriteLine($"string {enumName}::ToString({enumName} value)");
+				code.WriteLine($"string {schemaEnum.EnumName}::ToString({schemaEnum.EnumName} value)");
 				using (new Scope(code))
 				{
-					enumValues.ForEach(v => code.WriteLine($"if(value.m_value == {enumName}::{v}) return \"{v}\";"));
-					code.WriteLine($"throw std::invalid_argument(\"Value was not a valid {enumName}\");");
+					foreach (var enumValue in schemaEnum.Values)
+					{
+						code.WriteLine($"if(value.m_value == {schemaEnum.EnumName}::{enumValue}) return \"{enumValue}\";");
+					}
+
+					code.WriteLine($"throw std::invalid_argument(\"Value was not a valid {schemaEnum.EnumName}\");");
 				}
 
 				code.NewLine();
-				code.WriteLine($"string {enumName}::ToString(Type value)");
+				code.WriteLine($"string {schemaEnum.EnumName}::ToString(Type value)");
 				using (new Scope(code))
 				{
-					enumValues.ForEach(v => code.WriteLine($"if(value == {enumName}::{v}) return \"{v}\";"));
-					code.WriteLine($"throw std::invalid_argument(\"Value was not a valid {enumName}\");");
+					foreach (var enumValue in schemaEnum.Values)
+					{
+						code.WriteLine($"if(value == {schemaEnum.EnumName}::{enumValue}) return \"{enumValue}\";");
+					}
+
+					code.WriteLine($"throw std::invalid_argument(\"Value was not a valid {schemaEnum.EnumName}\");");
 				}
 
 				code.NewLine();
-				code.WriteLine($"{enumName} {enumName}::FromString(const string& value)");
+				code.WriteLine($"{schemaEnum.EnumName} {schemaEnum.EnumName}::FromString(const string& value)");
 				using (new Scope(code))
 				{
-					enumValues.ForEach(v => code.WriteLine($"if(value == \"{v}\") return {enumName}::{v};"));
-					code.WriteLine($"throw std::invalid_argument(value + \" was not a valid {enumName}\");");
+					foreach (var enumValue in schemaEnum.Values)
+					{
+						code.WriteLine($"if(value == \"{enumValue}\") return {schemaEnum.EnumName}::{enumValue};");
+					}
+
+					code.WriteLine($"throw std::invalid_argument(value + \" was not a valid {schemaEnum.EnumName}\");");
 				}
 
 				code.NewLine();
-				code.WriteLine($"const vector<{enumName}>& {enumName}::GetValues()");
+				code.WriteLine($"const vector<{schemaEnum.EnumName}>& {schemaEnum.EnumName}::GetValues()");
 				using (new Scope(code))
 				{
-					code.WriteLine($"static vector<{enumName}> list;");
+					code.WriteLine($"static vector<{schemaEnum.EnumName}> list;");
 					code.WriteLine("if(!list.empty()) { return list; }");
-					code.WriteLine($"list.reserve({enumValues.Count});");
-					enumValues.ForEach(v => code.WriteLine($"list.push_back({enumName}::{v});"));
+					code.WriteLine($"list.reserve({schemaEnum.Values.Count});");
+					foreach (var enumValue in schemaEnum.Values)
+					{
+						code.WriteLine($"list.push_back({schemaEnum.EnumName}::{enumValue});");
+					}
+
 					code.WriteLine("return list;");
 				}
 
 				code.NewLine();
-				code.WriteLine($"const vector<string>& {enumName}::GetNames()");
+				code.WriteLine($"const vector<string>& {schemaEnum.EnumName}::GetNames()");
 				using (new Scope(code))
 				{
 					code.WriteLine("static vector<string> list;");
 					code.WriteLine("if(!list.empty()) { return list; }");
-					code.WriteLine($"list.reserve({enumValues.Count});");
-					enumValues.ForEach(v => code.WriteLine($"list.push_back(\"{v}\");"));
+					code.WriteLine($"list.reserve({schemaEnum.Values.Count});");
+					foreach (var enumValue in schemaEnum.Values)
+					{
+						code.WriteLine($"list.push_back(\"{enumValue}\");");
+					}
+
 					code.WriteLine("return list;");
 				}
 			}
@@ -869,13 +883,13 @@
 
 		public static void GenerateImGuiEditField(SchemaMember schemaMember, CodeGenerator code)
 		{
-			code.WriteLine($"ImGui::PushID(\"{schemaMember.Name}\");");
+			code.WriteLine($"ImGui::PushID(\"{schemaMember.MemberName}\");");
 			using (new Scope(code))
 			{
 				if (schemaMember.Type is Schema.Types.Array array)
 				{
-					var keyMember = array.GetKeyMember();
-					code.WriteLine($"string title = string(\"{schemaMember.Name}\") + \" (array({array.ElementType}))\";");
+					array.TryGetKeyMember(out var keyMember);
+					code.WriteLine($"string title = string(\"{schemaMember.MemberName}\") + \" (array({array.ElementType}))\";");
 					code.WriteLine($"ColumnStack::PushSingle();");
 					code.WriteLine($"if(ImGui::CollapsingHeader(title.c_str()))");
 					using (new Scope(code))
@@ -900,7 +914,7 @@
 								key = $"{keyMember.Type}(), ";
 							}
 
-							code.WriteLine($"{schemaMember.Name}.{addFunc}({key}val);");
+							code.WriteLine($"{schemaMember.MemberName}.{addFunc}({key}val);");
 						}
 
 						string filterCondition = "if(true)";
@@ -937,7 +951,7 @@
 							code.WriteLine($"ColumnStack::Push(2, \"primitiveArray\");");
 						}
 
-						code.WriteLine($"for(auto& {elem} : {schemaMember.Name})");
+						code.WriteLine($"for(auto& {elem} : {schemaMember.MemberName})");
 						using (new Scope(code))
 						{
 							code.WriteLine(filterCondition);
@@ -955,7 +969,7 @@
 									code.WriteLine($"ImGui::SameLine();");
 									code.WriteLine($"ImGui::TextUnformatted(std::to_string(idx).c_str());");
 									code.WriteLine($"ImGui::NextColumn();");
-									GenerateEditFieldForType(array.ElementType, schemaMember.Name, $"elem", code);
+									GenerateEditFieldForType(array.ElementType, schemaMember.MemberName, $"elem", code);
 									code.WriteLine($"ImGui::NextColumn();");
 									code.WriteLine($"ImGui::Separator();");
 								}
@@ -972,10 +986,10 @@
 
 									if (keyMember != null)
 									{
-										key = $"std::to_string(elem->{keyMember.Name})";
+										key = $"std::to_string(elem->{keyMember.MemberName})";
 										if (keyMember.Type is Schema.Types.String)
 										{
-											key = $"elem->{keyMember.Name}";
+											key = $"elem->{keyMember.MemberName}";
 										}
 									}
 
@@ -984,7 +998,7 @@
 									using (new Scope(code))
 									{
 										code.WriteLine($"ImGui::Indent();");
-										GenerateEditFieldForType(array.ElementType, schemaMember.Name, $"elem", code);
+										GenerateEditFieldForType(array.ElementType, schemaMember.MemberName, $"elem", code);
 										code.WriteLine($"ImGui::Unindent();");
 									}
 								}
@@ -1005,11 +1019,11 @@
 						{
 							if (!string.IsNullOrEmpty(array.Container))
 							{
-								code.WriteLine($"{schemaMember.Name}.removeAt(indexToDelete);");
+								code.WriteLine($"{schemaMember.MemberName}.removeAt(indexToDelete);");
 							}
 							else
 							{
-								code.WriteLine($"{schemaMember.Name}.erase({schemaMember.Name}.begin() + indexToDelete);");
+								code.WriteLine($"{schemaMember.MemberName}.erase({schemaMember.MemberName}.begin() + indexToDelete);");
 							}
 						}
 
@@ -1017,7 +1031,7 @@
 						{
 							code.WriteLine();
 							code.WriteLine($"auto keysToFix = vector<{keyMember.Type}>();");
-							code.WriteLine($"for(auto& [key, elem] : {schemaMember.Name})");
+							code.WriteLine($"for(auto& [key, elem] : {schemaMember.MemberName})");
 							using (new Scope(code))
 							{
 								code.WriteLine($"auto& realKey = elem->{array.Key};");
@@ -1032,10 +1046,10 @@
 							code.WriteLine($"for(auto& key : keysToFix)");
 							using (new Scope(code))
 							{
-								code.WriteLine($"auto elem = {schemaMember.Name}[key];");
+								code.WriteLine($"auto elem = {schemaMember.MemberName}[key];");
 								code.WriteLine($"auto& realKey = elem->{array.Key};");
-								code.WriteLine($"{schemaMember.Name}.add(realKey, elem);");
-								code.WriteLine($"{schemaMember.Name}.remove(key);");
+								code.WriteLine($"{schemaMember.MemberName}.add(realKey, elem);");
+								code.WriteLine($"{schemaMember.MemberName}.remove(key);");
 							}
 						}
 
@@ -1047,12 +1061,12 @@
 				else if (schemaMember.Type.IsObject)
 				{
 					code.WriteLine($"ColumnStack::PushSingle();");
-					code.WriteLine($"string elementTitle = string(\"{schemaMember.Name}\") + \" ({schemaMember.Type})\";");
+					code.WriteLine($"string elementTitle = string(\"{schemaMember.MemberName}\") + \" ({schemaMember.Type})\";");
 					code.WriteLine($"if(ImGui::CollapsingHeader(elementTitle.c_str()))");
 					using (new Scope(code))
 					{
 						code.WriteLine($"ImGui::Indent();");
-						code.WriteLine($"{schemaMember.Name}->ImGui();");
+						code.WriteLine($"{schemaMember.MemberName}->ImGui();");
 						code.WriteLine($"ImGui::Unindent();");
 					}
 
@@ -1060,10 +1074,10 @@
 				}
 				else
 				{
-					code.WriteLine($"ImGui::TextUnformatted(\"{schemaMember.Name}\");");
+					code.WriteLine($"ImGui::TextUnformatted(\"{schemaMember.MemberName}\");");
 					code.WriteLine($"ImGui::NextColumn();");
 					code.WriteLine($"ImGui::SetNextItemWidth(-1);");
-					GenerateEditFieldForType(schemaMember.Type, schemaMember.Name, schemaMember.Name, code);
+					GenerateEditFieldForType(schemaMember.Type, schemaMember.MemberName, schemaMember.MemberName, code);
 
 					//TODO: enums
 					code.WriteLine($"ImGui::NextColumn();");

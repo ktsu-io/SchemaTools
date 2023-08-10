@@ -1,74 +1,75 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using ktsu.io.StrongPaths;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	public class DataSource
 	{
 		public const string FileSuffix = ".json";
-		public string SchemaPath { get; set; } = string.Empty;
-		public SchemaMember RootSchemaMember { get; set; } = new SchemaMember();
-		public JToken? Root { get; set; }
-		[JsonIgnore]
+		public FilePath SchemaPath { get; private set; } = new();
+		public RootSchemaMember RootSchemaMember { get; set; } = new();
+		public JsonNode? Root { get; set; }
 		public Schema Schema { get; private set; } = new();
-		[JsonIgnore]
-		public string Name { get; private set; } = string.Empty;
-		[JsonIgnore]
-		public string FilePath { get; set; } = string.Empty;
-		[JsonIgnore]
-		public string FileName { get; private set; } = string.Empty;
+		public DataSourceName Name { get; private set; } = new();
+		public FilePath FilePath { get; private set; } = new();
+		public FileName FileName { get; private set; } = new();
 
-		private static JsonSerializer JsonSerializer { get; } = JsonSerializer.Create(new JsonSerializerSettings()
+		public static bool TryLoad(FilePath filePath, out DataSource? dataSource)
 		{
-			Formatting = Formatting.Indented,
-		});
+			dataSource = null;
 
-		public static DataSource Load(string filePath)
-		{
-			DataSource dataSource = new();
-
-			try
+			if (!string.IsNullOrEmpty(filePath))
 			{
-				using var streamReader = File.OpenText(filePath);
-				JsonSerializer.Populate(streamReader, dataSource);
+				try
+				{
+					Utf8JsonReader reader = new(File.ReadAllBytes(filePath));
+					dataSource = JsonSerializer.Deserialize<DataSource>(ref reader, Schema.JsonSerializerOptions);
+					if (dataSource != null)
+					{
+						var fileName = (FileName)Path.GetFileName(filePath);
+						dataSource.FilePath = filePath;
+						dataSource.FileName = fileName;
+						dataSource.Name = (DataSourceName)Schema.MakePascalCase(fileName.RemoveSuffix(FileSuffix));
+						dataSource.LoadSchema(dataSource.SchemaPath);
+
+						//TODO: walk every class and tell each member which class they belong to
+					}
+				}
+				catch (FileNotFoundException)
+				{
+					//TODO: throw an error popup because the file has dissappeared
+				}
+				catch (JsonException)
+				{
+					//TODO: throw an error popup because the file is not well formed
+				}
 			}
-			catch (FileNotFoundException) { }
 
-			string dataFileName = Path.GetFileName(filePath);
-			dataSource.Name = Schema.MakePascalCase(dataFileName.Replace(FileSuffix, string.Empty));
-			dataSource.FilePath = filePath;
-			dataSource.FileName = dataFileName;
-			dataSource.RootSchemaMember.Name = (Schema.MemberName)"Root";
-			dataSource.LoadSchema(dataSource.SchemaPath);
-			return dataSource;
-		}
-
-		public static DataSource New()
-		{
-			DataSource dataSource = new();
-			dataSource.RootSchemaMember.Name = (Schema.MemberName)"Root";
-			return dataSource;
+			return dataSource != null;
 		}
 
 		public void Save()
 		{
-			using var fileStream = File.OpenWrite(FilePath);
-			using var streamWriter = new StreamWriter(fileStream);
-			JsonSerializer.Serialize(streamWriter, this);
+			byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(this, Schema.JsonSerializerOptions);
+			File.WriteAllBytes(FilePath, bytes);
 		}
 
-		public void LoadSchema(string path)
+		public void LoadSchema(FilePath path)
 		{
 			SchemaPath = path;
 			string? dirName = Path.GetDirectoryName(FilePath);
 			if (!string.IsNullOrEmpty(dirName))
 			{
-				string absoluteSchemaPath = Path.GetFullPath(Path.Combine(dirName, SchemaPath));
-				if (Schema.TryLoad(absoluteSchemaPath, out var schema) && schema != null)
+				var absoluteSchemaPath = (FilePath)Path.GetFullPath(Path.Combine(dirName, SchemaPath));
+				if (Schema.TryLoad(absoluteSchemaPath, out var schema))
 				{
-					Schema = schema;
+					Schema = schema!;
 				}
 			}
 		}
+
+		public void ChangeFilePath(FilePath newFilePath) => FilePath = newFilePath;
+
 	}
 }

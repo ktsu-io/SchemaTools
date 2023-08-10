@@ -1,21 +1,44 @@
-﻿using System.Text.Json;
-using System.Globalization;
+﻿using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ktsu.io.StrongPaths;
+using ktsu.io.StrongStrings;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	public partial class Schema
 	{
+		#region FilePaths
 		public const string FileSuffix = ".schema.json";
-		public string FilePath { get; set; } = string.Empty;
-		public List<SchemaClass> Classes { get; set; } = new();
-		public Dictionary<EnumName, HashSet<EnumValueName>> Enums { get; set; } = new();
 
-		public static JsonSerializerOptions JsonSerializerOptions { get; } = new()
+		public FilePath FilePath { get; private set; } = new();
+		#endregion
+
+		#region Serializable Properties
+		[JsonInclude]
+		public List<SchemaClass> Classes { get; init; } = new();
+
+		[JsonInclude]
+		public List<SchemaEnum> Enums { get; init; } = new();
+
+		#endregion
+
+		public static JsonSerializerOptions JsonSerializerOptions { get; } = new(JsonSerializerDefaults.General)
 		{
 			WriteIndented = true,
+			DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+			IgnoreReadOnlyFields = true,
+			IgnoreReadOnlyProperties = true,
+			IncludeFields = true,
+			Converters = 
+			{
+				new JsonStringEnumConverter(),
+				//new StrongPathJsonConvertorFactory(),
+				new StrongStringJsonConvertorFactory(),
+			}
 		};
 
-		public static bool TryLoad(string filePath, out Schema? schema)
+		public static bool TryLoad(FilePath filePath, out Schema? schema)
 		{
 			schema = null;
 
@@ -23,13 +46,11 @@ namespace ktsu.io
 			{
 				try
 				{
-					string jsonString = File.ReadAllText(filePath);
-					schema = JsonSerializer.Deserialize<Schema>(jsonString);
+					schema = JsonSerializer.Deserialize<Schema>(File.ReadAllBytes(filePath), JsonSerializerOptions);
 					if (schema != null)
 					{
 						schema.FilePath = filePath;
-
-						// TODO: walk every class and tell each member which class they belong to
+						//TODO: walk every class and tell each member which class they belong to
 					}
 				}
 				catch (FileNotFoundException)
@@ -71,6 +92,7 @@ namespace ktsu.io
 				File.Move(FilePath, bkFilePath);
 			}
 			catch (FileNotFoundException) { }
+
 			File.Move(tmpFilePath, FilePath);
 			File.Delete(bkFilePath);
 		}
@@ -86,10 +108,46 @@ namespace ktsu.io
 
 		public static string LowerCaseFirst(string str) => str[..1].ToLower() + str[1..];
 
+		public bool TryAddClass(ClassName className)
+		{
+			if (!string.IsNullOrEmpty(className) && !Classes.Any(c => c.ClassName == className))
+			{
+				SchemaClass schemaClass = new();
+				schemaClass.Rename(className);
+				schemaClass.AssosciateWith(this);
+				Classes.Add(schemaClass);
+				return true;
+			}
+
+			return false;
+		}
+
 		public bool TryGetClass(ClassName? className, out SchemaClass? schemaClass)
 		{
-			schemaClass = Classes.FirstOrDefault(c => c.Name == className);
+			schemaClass = Classes.FirstOrDefault(c => c.ClassName == className);
 			return schemaClass != null;
 		}
+
+		public void RemoveClass(SchemaClass schemaClass) => Classes.Remove(schemaClass);
+
+		public void ChangeFilePath(FilePath newFilePath) => FilePath = newFilePath;
+
+		public bool TryAddEnum(EnumName enumName)
+		{
+			if (!string.IsNullOrEmpty(enumName) && !Enums.Any(e => e.EnumName == enumName))
+			{
+				SchemaEnum schemaEnum = new();
+				schemaEnum.Rename(enumName);
+				schemaEnum.AssosciateWith(this);
+				Enums.Add(schemaEnum);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public SchemaClass? GetFirstClass() => Classes.FirstOrDefault();
+		public SchemaClass? GetLastClass() => Classes.LastOrDefault();
 	}
 }

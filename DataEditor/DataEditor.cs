@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Windows.Forms;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	internal class DataEditor
 	{
@@ -15,7 +15,7 @@ namespace ktsu.io
 		{
 			DataEditor dataEditor = new();
 			dataEditor.Options.Load(dataEditor);
-			ImGuiApp.Start(nameof(DataEditor), dataEditor.Tick, dataEditor.Menu, dataEditor.Resized);
+			//ImGuiApp.Start(nameof(DataEditor), dataEditor.Tick, dataEditor.Menu, dataEditor.Resized);
 		}
 
 		private void Resized() => Options.Save(this);
@@ -53,7 +53,7 @@ namespace ktsu.io
 		{
 			var paths = Pathfinder.Paths;
 			const string key = "Data";
-			if (!paths.TryGetValue(key, out var path))
+			if (!paths.TryGetValue(key, out string? path))
 			{
 				throw new ArgumentException("Could not retrieve the path", key);
 			}
@@ -64,7 +64,7 @@ namespace ktsu.io
 		private void New()
 		{
 			Reset();
-			DataSource = DataSource.New();
+			DataSource = new();
 			Options.Save(this);
 		}
 
@@ -78,32 +78,46 @@ namespace ktsu.io
 			if (fileDialog.ShowDialog() == DialogResult.OK)
 			{
 				Reset();
-				DataSource = DataSource.Load(fileDialog.FileName);
+				if (DataSource.TryLoad((FilePath)fileDialog.FileName, out var dataSource))
+				{
+					DataSource = dataSource;
+				}
+
 				Options.Save(this);
 			}
 		}
 
 		private void Save()
 		{
-			if (string.IsNullOrEmpty(DataSource?.FilePath))
+			if (DataSource is null)
+			{
+				return;
+			}
+
+			if (string.IsNullOrEmpty(DataSource.FilePath))
 			{
 				SaveAs();
 				return;
 			}
 
-			DataSource.Save();
+			DataSource?.Save();
 		}
 
 		private void SaveAs()
 		{
+			if (DataSource is null)
+			{
+				return;
+			}
+
 			using var fileDialog = new SaveFileDialog();
 			fileDialog.InitialDirectory = GetDataPath();
 			fileDialog.Filter = "json files (*.json)|*.json|All files (*.*)|*.*";
 			fileDialog.RestoreDirectory = true;
 
-			if (fileDialog.ShowDialog() == DialogResult.OK && DataSource != null)
+			if (fileDialog.ShowDialog() == DialogResult.OK)
 			{
-				DataSource.FilePath = fileDialog.FileName;
+				DataSource.ChangeFilePath((FilePath)fileDialog.FileName);
 				Save();
 				Options.Save(this);
 			}
@@ -116,7 +130,7 @@ namespace ktsu.io
 				ImGui.TextUnformatted($"FilePath: {DataSource.FilePath}");
 				ImGui.TextUnformatted($"Schema:");
 				ImGui.SameLine();
-				var schemaFileName = DataSource.Schema?.FilePath ?? string.Empty;
+				string schemaFileName = DataSource.Schema?.FilePath ?? string.Empty;
 				schemaFileName = Path.GetFileName(schemaFileName);
 				if (ImGui.Button(schemaFileName, new Vector2(FieldWidth, 0)))
 				{
@@ -127,14 +141,14 @@ namespace ktsu.io
 					else
 					{
 						using var fileDialog = new OpenFileDialog();
-						fileDialog.InitialDirectory = SchemaEditor.GetSchemaPath();
+						//fileDialog.InitialDirectory = SchemaEditor.GetSchemaPath();
 						fileDialog.Filter = "schema files (*.schema.json)|*.schema.json|All files (*.*)|*.*";
 						fileDialog.RestoreDirectory = true;
 
 						if (fileDialog.ShowDialog() == DialogResult.OK)
 						{
-							var relativePath = Pathfinder.GetRelativePath(DataSource.FilePath, fileDialog.FileName);
-							DataSource.LoadSchema(relativePath);
+							string relativePath = Pathfinder.GetRelativePath(DataSource.FilePath, fileDialog.FileName);
+							DataSource.LoadSchema((FilePath)relativePath);
 						}
 					}
 				}
@@ -143,7 +157,7 @@ namespace ktsu.io
 				{
 					SchemaEditor.ShowMemberHeadings();
 					ImGui.SetNextItemWidth(FieldWidth);
-					var root = "Root";
+					string root = "Root";
 					ImGui.InputText($"##Root", ref root, 64, ImGuiInputTextFlags.ReadOnly);
 					ImGui.SameLine();
 					SchemaEditor.ShowMemberConfig(DataSource.Schema, DataSource.RootSchemaMember);

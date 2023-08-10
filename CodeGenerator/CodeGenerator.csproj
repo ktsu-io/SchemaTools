@@ -5,6 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+		<RootNamespace>ktsu.io.SchemaTools</RootNamespace>
 	</PropertyGroup>
 
 </Project>

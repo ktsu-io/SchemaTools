@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	public static class Pathfinder
 	{
@@ -82,8 +82,8 @@ namespace ktsu.io
 
 		public static void GatherFilesRecursively(string searchPath, Func<string, bool> predicate, List<string> results)
 		{
-			var files = Directory.GetFiles(searchPath);
-			foreach (var file in files)
+			string[] files = Directory.GetFiles(searchPath);
+			foreach (string file in files)
 			{
 				if (predicate is null || predicate(file))
 				{
@@ -91,8 +91,8 @@ namespace ktsu.io
 				}
 			}
 
-			var dirs = Directory.GetDirectories(searchPath);
-			foreach (var dir in dirs)
+			string[] dirs = Directory.GetDirectories(searchPath);
+			foreach (string dir in dirs)
 			{
 				GatherFilesRecursively(dir, predicate, results);
 			}
@@ -103,14 +103,14 @@ namespace ktsu.io
 			var fromInfo = new FileInfo(from);
 			var toInfo = new FileInfo(to);
 
-			var fromPath = Path.GetFullPath(fromInfo.FullName);
-			var toPath = Path.GetFullPath(toInfo.FullName);
+			string fromPath = Path.GetFullPath(fromInfo.FullName);
+			string toPath = Path.GetFullPath(toInfo.FullName);
 
 			var fromUri = new Uri(fromPath);
 			var toUri = new Uri(toPath);
 
 			var relativeUri = fromUri.MakeRelativeUri(toUri);
-			var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+			string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
 
 			return relativePath.Replace('/', Path.DirectorySeparatorChar);
 		}

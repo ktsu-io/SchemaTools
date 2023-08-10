@@ -1,26 +1,13 @@
-﻿using ktsu.io.StrongStrings;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace ktsu.io
+namespace ktsu.io.SchemaTools
 {
 	public partial class Schema
 	{
-		[JsonConverter(typeof(JsonConverters.AsString))]
-		public record class ClassName : AnyStrongString<ClassName> { }
-
-		[JsonConverter(typeof(JsonConverters.AsString))]
-		public record class MemberName : AnyStrongString<MemberName> { }
-
-		[JsonConverter(typeof(JsonConverters.AsString))]
-		public record class EnumName : AnyStrongString<EnumName> { }
-
-		[JsonConverter(typeof(JsonConverters.AsString))]
-		public record class EnumValueName : AnyStrongString<EnumValueName> { }
-
 		public static class Types
 		{
-			public const string TypeQualifier = $"{nameof(ktsu.io)}.{nameof(Schema)}+{nameof(Types)}+";
-			public class Null : BaseType { }
+			public static string TypeQualifier => $"{typeof(Types).FullName}+";
+			public class None : BaseType { }
 			public class Int : BaseType { }
 			public class Long : BaseType { }
 			public class Float : BaseType { }
@@ -32,57 +19,49 @@ namespace ktsu.io
 
 			public class Enum : BaseType
 			{
-				public EnumName Name { get; set; }
-				public Enum(EnumName name) => Name = name;
+				public EnumName EnumName { get; init; } = new();
 			}
 
 			public class Array : BaseType
 			{
-				public BaseType ElementType { get; set; }
-				public string Container { get; set; }
-				public MemberName Key { get; set; }
-				[JsonIgnore]
+				public BaseType ElementType { get; init; } = new None();
+				public ContainerName Container { get; set; } = new();
+				public MemberName Key { get; set; } = new();
 				public bool IsKeyed => ElementType.IsObject && !string.IsNullOrEmpty(Key) && !string.IsNullOrEmpty(Container);
 
-				public Array(BaseType elementType)
+				public bool TryGetKeyMember(out SchemaMember? keyMember)
 				{
-					ElementType = elementType;
-					Key = (MemberName)string.Empty;
-					Container = string.Empty;
-				}
-
-				/// <summary>
-				/// Parameterless construction is only allowed to be used by the FromString() method as it cant know what the element type will be yet
-				/// Everyone else should use the constructor that takes an element type
-				/// </summary>
-				public Array()
-				{
-					ElementType = new Null();
-					Key = (MemberName)string.Empty;
-					Container = string.Empty;
-				}
-
-				public SchemaMember? GetKeyMember()
-				{
-					if (ElementType is Object objectElement && objectElement.Class.TryGetMember(Key, out var keyMember))
+					keyMember = null;
+					if (ElementType is Object objectElement)
 					{
-						return keyMember;
+						objectElement.Class?.TryGetMember(Key, out keyMember);
 					}
 
-					return null;
+					return keyMember is not null;
 				}
 			}
 
 			public class Object : BaseType
 			{
-				[JsonIgnore]
-				public SchemaClass Class { get; }
-				public ClassName ClassName => Class.Name;
-				public Object(SchemaClass schemaClass) => Class = schemaClass;
+				private SchemaClass? _class;
+				public SchemaClass? Class
+				{
+					get
+					{
+						if (!string.IsNullOrEmpty(ClassName) && _class?.ClassName != ClassName)
+						{
+							ParentMember?.ParentSchema?.TryGetClass(ClassName, out _class);
+						}
+
+						return _class;
+					}
+				}
+
+				public ClassName ClassName { get; init; } = new();
 				public override string ToString() => ClassName;
 			}
 
-			public static readonly HashSet<Type> BuiltIn = new()
+			public static HashSet<Type> BuiltIn => new()
 			{
 				typeof(Int),
 				typeof(Long),
@@ -96,7 +75,7 @@ namespace ktsu.io
 				typeof(Array),
 			};
 
-			public static readonly HashSet<Type> Primitives = new()
+			public static HashSet<Type> Primitives => new()
 			{
 				typeof(Int),
 				typeof(Long),
@@ -108,8 +87,20 @@ namespace ktsu.io
 				typeof(Bool),
 			};
 
-			[JsonConverter(typeof(JsonConverters.AsSubclass), TypeQualifier)]
-			public abstract class BaseType : IEquatable<BaseType?>
+			[JsonDerivedType(typeof(None), nameof(None))]
+			[JsonDerivedType(typeof(Int), nameof(Int))]
+			[JsonDerivedType(typeof(Long), nameof(Long))]
+			[JsonDerivedType(typeof(Float), nameof(Float))]
+			[JsonDerivedType(typeof(Double), nameof(Double))]
+			[JsonDerivedType(typeof(String), nameof(String))]
+			[JsonDerivedType(typeof(DateTime), nameof(DateTime))]
+			[JsonDerivedType(typeof(TimeSpan), nameof(TimeSpan))]
+			[JsonDerivedType(typeof(Bool), nameof(Bool))]
+			[JsonDerivedType(typeof(Enum), nameof(Enum))]
+			[JsonDerivedType(typeof(Array), nameof(Array))]
+			[JsonDerivedType(typeof(Object), nameof(Object))]
+			[JsonPolymorphic(TypeDiscriminatorPropertyName = "TypeName")]
+			public abstract class BaseType : SchemaMemberChild, IEquatable<BaseType?>
 			{
 				public bool Equals(BaseType? other)
 				{
@@ -146,39 +137,29 @@ namespace ktsu.io
 					return Activator.CreateInstance(type);
 				}
 
-				[JsonIgnore]
 				public bool IsBuiltIn => BuiltIn.Contains(GetType());
-				[JsonIgnore]
 				public bool IsPrimitive => Primitives.Contains(GetType());
-				[JsonIgnore]
 				public bool IsIntegral => this switch
 				{
 					Int => true,
 					Long => true,
 					_ => false,
 				};
-				[JsonIgnore]
 				public bool IsDecimal => this switch
 				{
 					Float => true,
 					Double => true,
 					_ => false,
 				};
-				[JsonIgnore]
 				public bool IsNumeric => IsIntegral || IsDecimal;
-				[JsonIgnore]
 				public bool IsContainer => this switch
 				{
 					Array => true,
 					_ => false,
 				};
-				[JsonIgnore]
 				public bool IsObject => this is Object;
-				[JsonIgnore]
 				public bool IsArray => this is Array;
-				[JsonIgnore]
 				public bool IsComplexArray => this is Array array && array.ElementType.IsObject;
-				[JsonIgnore]
 				public bool IsPrimitiveArray => this is Array array && array.ElementType.IsPrimitive;
 			}
 		}
