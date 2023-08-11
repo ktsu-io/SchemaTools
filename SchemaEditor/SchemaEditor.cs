@@ -20,7 +20,7 @@ namespace ktsu.io.SchemaTools
 		private static void Main(string[] _)
 		{
 			SchemaEditor schemaEditor = new();
-			ImGuiApp.Start(nameof(SchemaEditor), schemaEditor.Options.WindowState, schemaEditor.DividerContainerCols.Tick, schemaEditor.Menu, schemaEditor.Resized);
+			ImGuiApp.Start($"{nameof(SchemaEditor)} - {schemaEditor.CurrentSchema?.FilePath?.FileName}", schemaEditor.Options.WindowState, schemaEditor.DividerContainerCols.Tick, schemaEditor.Menu, schemaEditor.Resized);
 		}
 
 		public SchemaEditor()
@@ -41,6 +41,7 @@ namespace ktsu.io.SchemaTools
 
 		private void ShowRightPanel(float dt)
 		{
+			ShowSchemaConfig();
 			ShowMembers();
 		}
 
@@ -481,6 +482,39 @@ namespace ktsu.io.SchemaTools
 			}
 
 			return schemaMember.Type.ToString();
+		}
+
+		private void ShowSchemaConfig()
+		{
+			if (CurrentSchema is not null)
+			{
+				if(string.IsNullOrEmpty(CurrentSchema.FilePath))
+				{
+					ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
+					return;
+				}
+
+				ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
+				ImGui.TextUnformatted($"Data Source Path: {CurrentSchema.DataSourcePath}");
+				ImGui.SameLine();
+				if(ImGui.Button("Browse"))
+				{
+					var initialDir = CurrentSchema.DataSourcePath;
+					if(string.IsNullOrEmpty(initialDir))
+					{
+						initialDir = CurrentSchema.FilePath.DirectoryPath;
+					}
+
+					using var dialog = new FolderBrowserDialog();
+					dialog.InitialDirectory = initialDir;
+					dialog.SelectedPath = initialDir;
+
+					if (dialog.ShowDialog() == DialogResult.OK)
+					{
+						CurrentSchema.DataSourcePath = (DirectoryPath)dialog.SelectedPath;
+					}
+				}
+			}
 		}
 	}
 }
