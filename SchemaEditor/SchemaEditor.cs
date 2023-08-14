@@ -13,30 +13,80 @@ namespace ktsu.io.SchemaTools
 		internal SchemaClass? CurrentClass { get; set; }
 		internal SchemaEditorOptions Options { get; } = new();
 		private static float FieldWidth => ImGui.GetIO().DisplaySize.X * 0.15f;
-
-		private DividerContainer DividerContainerCols { get; } = new("RootDivider");
+		private DateTime LastSaveOptionsTime { get; set; } = DateTime.MinValue;
+		private DateTime SaveOptionsQueuedTime { get; set; } = DateTime.MinValue;
+		private TimeSpan SaveOptionsDebounceTime => TimeSpan.FromSeconds(3);
+		private DividerContainer DividerContainerCols { get; } = new("RootDivider", DividerResized);
 
 		[STAThread]
 		private static void Main(string[] _)
 		{
 			SchemaEditor schemaEditor = new();
-			ImGuiApp.Start($"{nameof(SchemaEditor)} - {schemaEditor.CurrentSchema?.FilePath?.FileName}", schemaEditor.Options.WindowState, schemaEditor.DividerContainerCols.Tick, schemaEditor.Menu, schemaEditor.Resized);
+			ImGuiApp.Start($"{nameof(SchemaEditor)} - {schemaEditor.CurrentSchema?.FilePath?.FileName}", schemaEditor.Options.WindowState, schemaEditor.Tick, schemaEditor.ShowMenu, schemaEditor.WindowResized);
 		}
 
 		public SchemaEditor()
 		{
 			Options = SchemaEditorOptions.LoadOrCreate();
-			RestoreOpenSchema();
+			RestoreOptions();
 			DividerContainerCols.Add("Left", 0.25f, ShowLeftPanel);
 			DividerContainerCols.Add("Right", 0.75f, ShowRightPanel);
 		}
 
-		private void Resized() => Options.Save(this);
+		private void RestoreOptions()
+		{
+			RestoreOpenSchema();
+			RestoreDividerStates();
+		}
+
+		private void WindowResized() => QueueSaveOptions();
+
+		private void DividerResized(DividerContainer container)
+		{
+			Options.DividerStates[container.Id] = container.GetSizes();
+			QueueSaveOptions();
+		}
+
+		private void RestoreDividerStates()
+		{
+			if(Options.DividerStates.TryGetValue(DividerContainerCols.Id, out var sizes))
+			{
+				DividerContainerCols.SetSizesFromList(sizes);
+			}
+		}
+
+		//Dont call this directly, call QueueSaveOptions instead so that we can debounce the saves and avoid saving multiple times per frame or multiple frames in a row
+		private void SaveOptionsInternal()
+		{
+			Options.Save(this);
+		}
+
+		private void QueueSaveOptions()
+		{
+			SaveOptionsQueuedTime = DateTime.Now;
+		}
+
+		private void SaveOptionsIfRequired()
+		{
+			//debounce the save requests and avoid saving multiple times per frame or multiple frames in a row
+			if (SaveOptionsQueuedTime > LastSaveOptionsTime && DateTime.Now - SaveOptionsQueuedTime > SaveOptionsDebounceTime)
+			{
+				SaveOptionsInternal();
+				LastSaveOptionsTime = DateTime.Now;
+			}
+		}
+
+		private void Tick(float dt)
+		{
+			DividerContainerCols.Tick(dt);
+
+			SaveOptionsIfRequired();
+		}
 
 		private void ShowLeftPanel(float dt)
 		{
-			ShowEnums();
-			ShowClasses();
+			ShowCollapsiblePanel($"Enums ({CurrentSchema?.Enums.Count ?? 0})", ShowEnums);
+			ShowCollapsiblePanel($"Classes ({CurrentSchema?.Classes.Count ?? 0})", ShowClasses);
 		}
 
 		private void ShowRightPanel(float dt)
@@ -45,6 +95,13 @@ namespace ktsu.io.SchemaTools
 			ShowMembers();
 		}
 
+		private static void ShowCollapsiblePanel(string name, Action contentDelegate)
+		{
+			if (ImGui.CollapsingHeader(name))
+			{
+				contentDelegate?.Invoke();
+			}
+		}
 		private void Reset()
 		{
 			CurrentSchema = null;
@@ -75,7 +132,7 @@ namespace ktsu.io.SchemaTools
 			}
 		}
 
-		private void Menu()
+		private void ShowMenu()
 		{
 			if (ImGui.BeginMenu("File"))
 			{
@@ -113,7 +170,7 @@ namespace ktsu.io.SchemaTools
 		{
 			Reset();
 			CurrentSchema = new Schema();
-			Options.Save(this);
+			QueueSaveOptions();
 		}
 
 		private void Open()
@@ -129,7 +186,7 @@ namespace ktsu.io.SchemaTools
 				{
 					CurrentSchema = schema;
 					CurrentClass = CurrentSchema.GetFirstClass();
-					Options.Save(this);
+					QueueSaveOptions();
 				}
 			}
 		}
@@ -155,7 +212,7 @@ namespace ktsu.io.SchemaTools
 			{
 				CurrentSchema?.ChangeFilePath((FilePath)fileDialog.FileName);
 				Save();
-				Options.Save(this);
+				QueueSaveOptions();
 			}
 		}
 
@@ -168,7 +225,7 @@ namespace ktsu.io.SchemaTools
 					var newName = (EnumName)TextPrompt.Show("New Enum Name?");
 					if (CurrentSchema.TryAddEnum(newName))
 					{
-						Options.Save(this);
+						QueueSaveOptions();
 					}
 					else
 					{
@@ -188,7 +245,7 @@ namespace ktsu.io.SchemaTools
 					if (CurrentSchema.TryAddClass(newName))
 					{
 						CurrentClass = CurrentSchema.GetLastClass();
-						Options.Save(this);
+						QueueSaveOptions();
 					}
 					else
 					{
@@ -207,7 +264,7 @@ namespace ktsu.io.SchemaTools
 					var newName = (MemberName)TextPrompt.Show("New Member Name?");
 					if (CurrentClass.TryAddMember(newName))
 					{
-						Options.Save(this);
+						QueueSaveOptions();
 					}
 					else
 					{
@@ -221,52 +278,49 @@ namespace ktsu.io.SchemaTools
 		{
 			if (CurrentSchema != null)
 			{
-				if (ImGui.CollapsingHeader($"{Path.GetFileName(CurrentSchema.FilePath)} Enums", ImGuiTreeNodeFlags.DefaultOpen))
+				ImGui.Indent();
+				ShowNewEnum();
+				ImGui.NewLine();
+				foreach (var schemaEnum in CurrentSchema.Enums.OrderBy(e => e.EnumName).ToList())
 				{
-					ImGui.Indent();
-					ShowNewEnum();
-					ImGui.NewLine();
-					foreach (var schemaEnum in CurrentSchema.Enums.OrderBy(e => e.EnumName).ToList())
+					string enumName = schemaEnum.EnumName;
+					if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
 					{
-						string enumName = schemaEnum.EnumName;
-						if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+						CurrentSchema.Enums.Remove(schemaEnum);
+					}
+
+					ImGui.SameLine();
+					ImGui.SetNextItemWidth(FieldWidth);
+					ImGui.InputText($"##Enum{enumName}", ref enumName, 64, ImGuiInputTextFlags.ReadOnly);
+					ImGui.SameLine();
+					if (ImGui.Button($"+##addEnumValue{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+					{
+						var newValue = (EnumValueName)TextPrompt.Show("New Enum Value?");
+						if (!schemaEnum.TryAddValue(newValue))
 						{
-							CurrentSchema.Enums.Remove(schemaEnum);
+							MessageBox.Show($"An Enum Value with that name ({newValue}) already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+						}
+					}
+
+					ImGui.Indent();
+					foreach (var enumValueName in schemaEnum.Values.ToList())
+					{
+						string enumValue = enumValueName;
+						if (ImGui.Button($"X##deleteEnumValue{enumName}{enumValue}", new Vector2(ImGui.GetFrameHeight(), 0)))
+						{
+							schemaEnum.RemoveValue(enumValueName);
 						}
 
 						ImGui.SameLine();
 						ImGui.SetNextItemWidth(FieldWidth);
-						ImGui.InputText($"##Enum{enumName}", ref enumName, 64, ImGuiInputTextFlags.ReadOnly);
-						ImGui.SameLine();
-						if (ImGui.Button($"+##addEnumValue{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
-						{
-							var newValue = (EnumValueName)TextPrompt.Show("New Enum Value?");
-							if (!schemaEnum.TryAddValue(newValue))
-							{
-								MessageBox.Show($"An Enum Value with that name ({newValue}) already exists.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-							}
-						}
-
-						ImGui.Indent();
-						foreach (var enumValueName in schemaEnum.Values.ToList())
-						{
-							string enumValue = enumValueName;
-							if (ImGui.Button($"X##deleteEnumValue{enumName}{enumValue}", new Vector2(ImGui.GetFrameHeight(), 0)))
-							{
-								schemaEnum.RemoveValue(enumValueName);
-							}
-
-							ImGui.SameLine();
-							ImGui.SetNextItemWidth(FieldWidth);
-							ImGui.InputText($"##Enum{enumValue}", ref enumValue, 64, ImGuiInputTextFlags.ReadOnly);
-						}
-
-						ImGui.NewLine();
-						ImGui.Unindent();
+						ImGui.InputText($"##Enum{enumValue}", ref enumValue, 64, ImGuiInputTextFlags.ReadOnly);
 					}
 
+					ImGui.NewLine();
 					ImGui.Unindent();
 				}
+
+				ImGui.Unindent();
 			}
 		}
 
@@ -274,30 +328,27 @@ namespace ktsu.io.SchemaTools
 		{
 			if (CurrentSchema != null)
 			{
-				if (ImGui.CollapsingHeader($"{Path.GetFileName(CurrentSchema.FilePath)} Classes", ImGuiTreeNodeFlags.DefaultOpen))
+				ImGui.Indent();
+				ShowNewClass();
+				ImGui.NewLine();
+				foreach (var schemaClass in CurrentSchema.Classes.OrderBy(c => c.ClassName).ToList())
 				{
-					ImGui.Indent();
-					ShowNewClass();
-					ImGui.NewLine();
-					foreach (var schemaClass in CurrentSchema.Classes.OrderBy(c => c.ClassName).ToList())
+					if (ImGui.Button($"X##deleteClass{schemaClass.ClassName}", new Vector2(ImGui.GetFrameHeight(), 0)))
 					{
-						if (ImGui.Button($"X##deleteClass{schemaClass.ClassName}", new Vector2(ImGui.GetFrameHeight(), 0)))
-						{
-							CurrentSchema.Classes.Remove(schemaClass);
-						}
-
-						ImGui.SameLine();
-						ImGui.SetNextItemWidth(FieldWidth);
-						if (ImGui.Button($"{schemaClass.ClassName}", new Vector2(FieldWidth, 0)))
-						{
-							CurrentClass = schemaClass;
-							Options.Save(this);
-						}
+						CurrentSchema.Classes.Remove(schemaClass);
 					}
 
-					ImGui.Unindent();
-					ImGui.NewLine();
+					ImGui.SameLine();
+					ImGui.SetNextItemWidth(FieldWidth);
+					if (ImGui.Button($"{schemaClass.ClassName}", new Vector2(FieldWidth, 0)))
+					{
+						CurrentClass = schemaClass;
+						QueueSaveOptions();
+					}
 				}
+
+				ImGui.Unindent();
+				ImGui.NewLine();
 			}
 		}
 

@@ -12,7 +12,7 @@ namespace ktsu.io.SchemaTools
 		public const string FileSuffix = ".schema.json";
 
 		public FilePath FilePath { get; private set; } = new();
-		public DirectoryPath DataSourcePath { get; set; } = new();
+		public DirectoryPath? DataSourcePath { get; set; } = null;
 		#endregion
 
 		#region Serializable Properties

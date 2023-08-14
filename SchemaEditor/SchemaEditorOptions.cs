@@ -11,6 +11,8 @@ namespace ktsu.io.SchemaTools
 		public FilePath CurrentSchemaPath { get; set; } = new();
 		public ClassName CurrentClassName { get; set; } = new();
 		public ImGuiAppWindowState WindowState { get; set; } = new();
+		public Dictionary<string, bool> PanelStates { get; set; } = new();
+		public Dictionary<string, List<float>> DividerStates { get; set; } = new();
 
 		public void Save(SchemaEditor editor)
 		{
