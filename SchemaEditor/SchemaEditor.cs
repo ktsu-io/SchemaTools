@@ -1,7 +1,7 @@
-﻿using ImGuiNET;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Numerics;
 using System.Windows.Forms;
+using ImGuiNET;
 using ktsu.io.ReusableWinForms;
 using ktsu.io.StrongPaths;
 
@@ -16,17 +16,24 @@ namespace ktsu.io.SchemaTools
 		private DateTime LastSaveOptionsTime { get; set; } = DateTime.MinValue;
 		private DateTime SaveOptionsQueuedTime { get; set; } = DateTime.MinValue;
 		private TimeSpan SaveOptionsDebounceTime => TimeSpan.FromSeconds(3);
-		private DividerContainer DividerContainerCols { get; } = new("RootDivider", DividerResized);
+		private DividerContainer DividerContainerCols { get; }
 
 		[STAThread]
 		private static void Main(string[] _)
 		{
 			SchemaEditor schemaEditor = new();
-			ImGuiApp.Start($"{nameof(SchemaEditor)} - {schemaEditor.CurrentSchema?.FilePath?.FileName}", schemaEditor.Options.WindowState, schemaEditor.Tick, schemaEditor.ShowMenu, schemaEditor.WindowResized);
+			string title = nameof(SchemaEditor);
+			if (schemaEditor.CurrentSchema != null)
+			{
+				title += $" - {schemaEditor.CurrentSchema.FilePath.FileName}";
+			}
+
+			ImGuiApp.Start(title, schemaEditor.Options.WindowState, schemaEditor.Tick, schemaEditor.ShowMenu, schemaEditor.WindowResized);
 		}
 
 		public SchemaEditor()
 		{
+			DividerContainerCols = new("RootDivider", DividerResized);
 			Options = SchemaEditorOptions.LoadOrCreate();
 			RestoreOptions();
 			DividerContainerCols.Add("Left", 0.25f, ShowLeftPanel);
@@ -49,7 +56,7 @@ namespace ktsu.io.SchemaTools
 
 		private void RestoreDividerStates()
 		{
-			if(Options.DividerStates.TryGetValue(DividerContainerCols.Id, out var sizes))
+			if (Options.DividerStates.TryGetValue(DividerContainerCols.Id, out var sizes))
 			{
 				DividerContainerCols.SetSizesFromList(sizes);
 			}
@@ -107,7 +114,7 @@ namespace ktsu.io.SchemaTools
 			CurrentSchema = null;
 			CurrentClass = null;
 		}
-		
+
 		private void RestoreOpenSchema()
 		{
 			if (string.IsNullOrEmpty(Options.CurrentSchemaPath))
@@ -539,7 +546,7 @@ namespace ktsu.io.SchemaTools
 		{
 			if (CurrentSchema is not null)
 			{
-				if(string.IsNullOrEmpty(CurrentSchema.FilePath))
+				if (string.IsNullOrEmpty(CurrentSchema.FilePath))
 				{
 					ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
 					return;
@@ -548,10 +555,10 @@ namespace ktsu.io.SchemaTools
 				ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
 				ImGui.TextUnformatted($"Data Source Path: {CurrentSchema.DataSourcePath}");
 				ImGui.SameLine();
-				if(ImGui.Button("Browse"))
+				if (ImGui.Button("Browse"))
 				{
 					var initialDir = CurrentSchema.DataSourcePath;
-					if(string.IsNullOrEmpty(initialDir))
+					if (string.IsNullOrEmpty(initialDir))
 					{
 						initialDir = CurrentSchema.FilePath.DirectoryPath;
 					}
