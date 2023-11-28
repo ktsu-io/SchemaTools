@@ -11,8 +11,11 @@
 		<RootNamespace>ktsu.io.SchemaTools</RootNamespace>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.1" />
+	</ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" />
     <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />

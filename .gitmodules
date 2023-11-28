@@ -7,3 +7,6 @@
 [submodule "ReusableWinForms"]
 	path = ReusableWinForms
 	url = git@github.com:ktsu-io/ReusableWinForms.git
+[submodule "CodeBlocker"]
+	path = CodeBlocker
+	url = https://github.com/ktsu-io/CodeBlocker.git

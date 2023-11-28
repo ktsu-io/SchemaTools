@@ -2,7 +2,7 @@
 {
 	using ktsu.io.StrongPaths;
 
-	public class SchemaClassGenerator
+	public static class SchemaClassGenerator
 	{
 		private const string InputPathKey = "Schema";
 		private const string OutputPathKey = "SchemaClassGeneratorOutput";
@@ -22,23 +22,23 @@
 			var paths = Pathfinder.Paths;
 			if (!paths.TryGetValue(InputPathKey, out InputPath))
 			{
-				throw new Exception($"Could not retrieve the path: {InputPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {InputPathKey}");
 			}
 
 			if (!paths.TryGetValue(OutputPathKey, out OutputPath))
 			{
-				throw new Exception($"Could not retrieve the path: {OutputPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {OutputPathKey}");
 			}
 
 			if (!paths.TryGetValue(ProjectPathKey, out ProjectPath))
 			{
-				throw new Exception($"Could not retrieve the path: {ProjectPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {ProjectPathKey}");
 			}
 
 			if (args.Length >= 1)
 			{
 				string arg = args.First();
-				if (!arg.StartsWith("-"))
+				if (!arg.StartsWith('-'))
 				{
 					InputPath = Path.Combine(Pathfinder.ProjectRoot, arg);
 				}
@@ -47,7 +47,7 @@
 			if (args.Length >= 2)
 			{
 				string arg = args.Skip(1).First();
-				if (!arg.StartsWith("-"))
+				if (!arg.StartsWith('-'))
 				{
 					OutputPath = Path.Combine(Pathfinder.ProjectRoot, arg);
 				}
@@ -56,7 +56,7 @@
 			if (args.Length >= 3)
 			{
 				string arg = args.Skip(2).First();
-				if (!arg.StartsWith("-"))
+				if (!arg.StartsWith('-'))
 				{
 					ProjectPath = Path.Combine(Pathfinder.ProjectRoot, arg);
 				}
