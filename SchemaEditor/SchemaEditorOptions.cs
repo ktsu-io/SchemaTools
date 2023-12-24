@@ -1,75 +1,74 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Numerics;
 using ktsu.io.StrongPaths;
 
-namespace ktsu.io.SchemaTools
+namespace ktsu.io.SchemaTools;
+
+internal class SchemaEditorOptions
 {
-	internal class SchemaEditorOptions
+	public static FileName FileName => (FileName)$"{nameof(SchemaEditorOptions)}.json";
+	public static FilePath FilePath => (FilePath)Path.Combine(Pathfinder.AppData, Pathfinder.ProjectName, FileName);
+	public FilePath CurrentSchemaPath { get; set; } = new();
+	public ClassName CurrentClassName { get; set; } = new();
+	public ImGuiAppWindowState WindowState { get; set; } = new();
+	public Dictionary<string, bool> PanelStates { get; set; } = new();
+	public Dictionary<string, List<float>> DividerStates { get; set; } = new();
+
+	public void Save(SchemaEditor editor)
 	{
-		public static FileName FileName => (FileName)$"{nameof(SchemaEditorOptions)}.json";
-		public static FilePath FilePath => (FilePath)Path.Combine(Pathfinder.AppData, Pathfinder.ProjectName, FileName);
-		public FilePath CurrentSchemaPath { get; set; } = new();
-		public ClassName CurrentClassName { get; set; } = new();
-		public ImGuiAppWindowState WindowState { get; set; } = new();
-		public Dictionary<string, bool> PanelStates { get; set; } = new();
-		public Dictionary<string, List<float>> DividerStates { get; set; } = new();
+		Schema.EnsureDirectoryExists(FilePath);
 
-		public void Save(SchemaEditor editor)
+		CurrentClassName = editor.CurrentClass?.Name ?? new();
+		CurrentSchemaPath = editor.CurrentSchema?.FilePath ?? new();
+
+		if (ImGuiApp.Window != null)
 		{
-			Schema.EnsureDirectoryExists(FilePath);
+			WindowState.WindowSizeState = ImGuiApp.Window.WindowState;
+			WindowState.Pos = new Vector2(ImGuiApp.Window.X, ImGuiApp.Window.Y);
+			WindowState.Size = new Vector2(ImGuiApp.Window.Width, ImGuiApp.Window.Height);
+		}
 
-			CurrentClassName = editor.CurrentClass?.ClassName ?? new();
-			CurrentSchemaPath = editor.CurrentSchema?.FilePath ?? new();
+		string jsonString = JsonSerializer.Serialize(this, Schema.JsonSerializerOptions);
 
-			if (ImGuiApp.Window != null)
-			{
-				WindowState.WindowSizeState = ImGuiApp.Window.WindowState;
-				WindowState.Pos = new Vector2(ImGuiApp.Window.X, ImGuiApp.Window.Y);
-				WindowState.Size = new Vector2(ImGuiApp.Window.Width, ImGuiApp.Window.Height);
-			}
+		//TODO: hoist this out to some static method called something like WriteTextSafely
+		string tmpFilePath = $"{FilePath}.tmp";
+		string bkFilePath = $"{FilePath}.bk";
+		File.Delete(tmpFilePath);
+		File.Delete(bkFilePath);
+		File.WriteAllText(tmpFilePath, jsonString);
+		try
+		{
+			File.Move(FilePath, bkFilePath);
+		}
+		catch (FileNotFoundException) { }
 
-			string jsonString = JsonSerializer.Serialize(this, Schema.JsonSerializerOptions);
+		File.Move(tmpFilePath, FilePath);
+		File.Delete(bkFilePath);
+	}
 
-			//TODO: hoist this out to some static method called something like WriteTextSafely
-			string tmpFilePath = $"{FilePath}.tmp";
-			string bkFilePath = $"{FilePath}.bk";
-			File.Delete(tmpFilePath);
-			File.Delete(bkFilePath);
-			File.WriteAllText(tmpFilePath, jsonString);
+	public static SchemaEditorOptions LoadOrCreate()
+	{
+		Schema.EnsureDirectoryExists(FilePath);
+
+		if (!string.IsNullOrEmpty(FilePath))
+		{
 			try
 			{
-				File.Move(FilePath, bkFilePath);
+				string jsonString = File.ReadAllText(FilePath);
+				var options = JsonSerializer.Deserialize<SchemaEditorOptions>(jsonString, Schema.JsonSerializerOptions);
+				if (options != null)
+				{
+					return options;
+				}
 			}
-			catch (FileNotFoundException) { }
-
-			File.Move(tmpFilePath, FilePath);
-			File.Delete(bkFilePath);
-		}
-
-		public static SchemaEditorOptions LoadOrCreate()
-		{
-			Schema.EnsureDirectoryExists(FilePath);
-
-			if (!string.IsNullOrEmpty(FilePath))
+			catch (FileNotFoundException)
 			{
-				try
-				{
-					string jsonString = File.ReadAllText(FilePath);
-					var options = JsonSerializer.Deserialize<SchemaEditorOptions>(jsonString, Schema.JsonSerializerOptions);
-					if (options != null)
-					{
-						return options;
-					}
-				}
-				catch (FileNotFoundException)
-				{
-				}
-				catch (JsonException)
-				{
-				}
 			}
-
-			return new();
+			catch (JsonException)
+			{
+			}
 		}
+
+		return new();
 	}
 }

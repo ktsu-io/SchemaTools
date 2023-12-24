@@ -1,8 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.0-alpha.1" />
+    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.0-alpha.2" />
     <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.0-alpha.2" />
   </ItemGroup>
-  
+
 </Project>

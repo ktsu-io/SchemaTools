@@ -1,33 +1,32 @@
 <Project>
 
-  <Import Project=".project.props" />
+	<Import Project=".project.props" />
 
-  <PropertyGroup>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Authors>ktsu.io</Authors>
-    <RootNamespace>$(Authors.Replace(" ", "")).$(MSBuildProjectName.Replace(" ", ""))</RootNamespace>
-    <AssemblyName>$(RootNamespace)</AssemblyName>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <AnalysisLevel>latest-all</AnalysisLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <WarningLevel>9999</WarningLevel>
-    <NoWarn>CA1724;CA1034;CA1000;IDE1006</NoWarn>
-    <IncludeContentInPack>True</IncludeContentInPack>
-    <BaseOutputPath>..\bin</BaseOutputPath>
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Authors>ktsu.io</Authors>
+		<RootNamespace>$(Authors.Replace(" ", "")).$(MSBuildProjectName.Replace(" ", ""))</RootNamespace>
+		<AssemblyName>$(RootNamespace)</AssemblyName>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<AnalysisLevel>latest-recommended</AnalysisLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<WarningLevel>9999</WarningLevel>
+		<NoWarn>IDE1006</NoWarn>
+		<!-- Example: "namespace ktsu.io.SchemaTools" Naming rule violation: These words must begin with upper case characters: ktsu.io -->
+		<!--<NoWarn>CA1724;CA1034;CA1000;IDE1006</NoWarn>-->
+		<IncludeContentInPack>True</IncludeContentInPack>
+		<BaseOutputPath>..\bin</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-  </PropertyGroup>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include=".project.props" />
-    <None Include="..\$(PackageLicenseFile)" Pack="True" PackagePath="" Visible="False" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>$(RootNamespace).Test</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include=".project.props" />
+		<None Include="..\$(PackageLicenseFile)" Pack="True" PackagePath="" Visible="False" />
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>$(RootNamespace).Test</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
 
 </Project>

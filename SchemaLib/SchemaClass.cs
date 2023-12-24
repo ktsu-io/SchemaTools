@@ -1,40 +1,19 @@
-﻿using System.Text.Json.Serialization;
+﻿
+using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
-namespace ktsu.io.SchemaTools
+namespace ktsu.io.SchemaTools;
+public class SchemaClass : SchemaChild<ClassName>
 {
-	public class SchemaClass : SchemaChild
-	{
-		[JsonInclude]
-		public ClassName ClassName { get; private set; } = new();
+	[JsonPropertyName("Members")]
+	private Collection<SchemaMember> MemberList { get; set; } = new();
 
-		[JsonPropertyName("Members")]
-		private List<SchemaMember> MemberList { get; set; } = new();
+	public IReadOnlyList<SchemaMember> Members => MemberList;
 
-		public IReadOnlyList<SchemaMember> Members => MemberList;
+	public bool TryAddMember(MemberName memberName) => ParentSchema?.TryAddChild(memberName, MemberList) ?? throw new NotSupportedException("SchemaClass must be associated with a Schema before adding members");
 
-		public bool TryAddMember(MemberName memberName)
-		{
 
-			if (!string.IsNullOrEmpty(memberName) && !MemberList.Any(m => m.MemberName == memberName))
-			{
-				SchemaMember schemaMember = new();
-				schemaMember.Rename(memberName);
-				schemaMember.AssosciateWith(this);
-				MemberList.Add(schemaMember);
-				return true;
-			}
+	public bool TryGetMember(MemberName memberName, out SchemaMember? schemaMember) => Schema.TryGetChild(memberName, MemberList, out schemaMember);
 
-			return false;
-		}
-
-		public void Rename(ClassName className) => ClassName = className;
-
-		public bool TryGetMember(MemberName? memberName, out SchemaMember? schemaMember)
-		{
-			schemaMember = MemberList.FirstOrDefault(c => c.MemberName == memberName);
-			return schemaMember != null;
-		}
-
-		public void RemoveMember(SchemaMember schemaMember) => MemberList.Remove(schemaMember);
-	}
+	public void RemoveMember(SchemaMember schemaMember) => Schema.RemoveChild(schemaMember, MemberList);
 }

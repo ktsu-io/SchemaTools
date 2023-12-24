@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ImGuiApp\ImGuiApp\ImGuiApp.csproj" />
     <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\SchemaEditor\SchemaEditor.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />

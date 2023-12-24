@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\CodeGenerator\CodeGenerator.csproj" />
     <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
     <ProjectReference Include="..\SchemaClassGenerator\SchemaClassGenerator.csproj" />

@@ -1,6 +1,7 @@
 ﻿namespace ktsu.io.SchemaTools
 {
 	using ktsu.io.StrongPaths;
+	using ktsu.io.CodeBlocker;
 
 	internal class DataSourceGenerator
 	{
@@ -24,17 +25,17 @@
 			var paths = Pathfinder.Paths;
 			if (!paths.TryGetValue(InputPathKey, out InputPath))
 			{
-				throw new Exception($"Could not retrieve the path: {InputPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {InputPathKey}");
 			}
 
 			if (!paths.TryGetValue(OutputPathKey, out OutputPath))
 			{
-				throw new Exception($"Could not retrieve the path: {OutputPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {OutputPathKey}");
 			}
 
 			if (!paths.TryGetValue(ProjectPathKey, out ProjectPath))
 			{
-				throw new Exception($"Could not retrieve the path: {ProjectPathKey}");
+				throw new KeyNotFoundException($"Could not retrieve the path: {ProjectPathKey}");
 			}
 
 			//if (!paths.TryGetValue(PublishedDataKey, out PublishedDataPath))
@@ -209,7 +210,7 @@
 			filters.Save();
 		}
 
-		private static void GenerateDataSourceHeader(DataSource dataSource, CodeGenerator code)
+		private static void GenerateDataSourceHeader(DataSource dataSource, CodeBlocker code)
 		{
 			var array = dataSource.RootSchemaMember.Type as Schema.Types.Array;
 
@@ -266,7 +267,7 @@
 			}
 		}
 
-		private static void GenerateRoot(SchemaMember schemaMember, CodeGenerator code)
+		private static void GenerateRoot(SchemaMember schemaMember, CodeBlocker code)
 		{
 			if (schemaMember.Type is Schema.Types.Array array)
 			{
@@ -291,7 +292,7 @@
 			}
 		}
 
-		private static void GenerateDataSourceCode(DataSource dataSource, CodeGenerator code)
+		private static void GenerateDataSourceCode(DataSource dataSource, CodeBlocker code)
 		{
 			if (InputPath != null)
 			{
@@ -370,7 +371,7 @@
 			}
 		}
 
-		private static void GenerateRootInclude(SchemaMember schemaMember, CodeGenerator code)
+		private static void GenerateRootInclude(SchemaMember schemaMember, CodeBlocker code)
 		{
 			if (schemaMember.Type is Schema.Types.Array array && array.IsComplexArray)
 			{
