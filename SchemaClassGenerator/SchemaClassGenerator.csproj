@@ -1,26 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<OutputType>Exe</OutputType>
-		<BaseOutputPath>..\bin</BaseOutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-		<RootNamespace>ktsu.io.SchemaTools</RootNamespace>
-		<AnalysisLevel>latest-recommended</AnalysisLevel>
-	</PropertyGroup>
-
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
 	<ItemGroup>
-	  <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
-	  <PackageReference Include="ktsu.io.OrdinalStringExtensions" Version="1.0.0-alpha.3" />
+		<PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
+		<PackageReference Include="ktsu.io.OrdinalStringExtensions" Version="1.0.0-alpha.3" />
+		<ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
+		<ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
+		<ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
 	</ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
-    <ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
-    <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
-  </ItemGroup>
-
 </Project>

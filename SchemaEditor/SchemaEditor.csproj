@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ktsu.io.AppDataStorage" Version="1.0.0-alpha.14" />
     <PackageReference Include="ktsu.io.CaseConverter" Version="1.0.0-alpha.5" />
@@ -9,7 +12,6 @@
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
     <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.2" />
     <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.1" />
-    <PackageReference Include="ktsu.io.TrivialWinForms" Version="1.0.0-alpha.4" />
     <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
