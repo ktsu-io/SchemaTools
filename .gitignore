@@ -397,6 +397,5 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Custom entries by https://github.com/ktsu-io
+# Custom medmondson
 .project.props.default
-.project.props.default-winforms
