@@ -1,3 +1,5 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace ktsu.io.SchemaTools;
 
 using System.Diagnostics;
@@ -186,7 +188,7 @@ public class SchemaEditor
 			if (Schema.TryLoad((FilePath)fileDialog.FileName, out var schema) && schema != null)
 			{
 				CurrentSchema = schema;
-				CurrentClass = CurrentSchema.GetFirstClass();
+				CurrentClass = CurrentSchema?.GetFirstClass();
 				QueueSaveOptions();
 			}
 		}

@@ -1,14 +1,11 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace ktsu.io.SchemaTools;
 
 using System.Text.Json.Serialization;
 
 public partial class Schema
 {
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "We're mimicing those types in our schema.")]
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "We're mimicing those types in our schema.")]
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "We're mimicing those types in our schema.")]
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "I actually want the hierachy here")]
-
 	public static class Types
 	{
 		public static string TypeQualifier => $"{typeof(Types).FullName}+";
@@ -48,17 +45,17 @@ public partial class Schema
 
 		public class Object : BaseType
 		{
-			private SchemaClass? _class;
+			private SchemaClass? internalClass;
 			public SchemaClass? Class
 			{
 				get
 				{
-					if (!string.IsNullOrEmpty(ClassName) && _class?.Name != ClassName)
+					if (!string.IsNullOrEmpty(ClassName) && internalClass?.Name != ClassName)
 					{
-						ParentMember?.ParentSchema?.TryGetClass(ClassName, out _class);
+						ParentMember?.ParentSchema?.TryGetClass(ClassName, out internalClass);
 					}
 
-					return _class;
+					return internalClass;
 				}
 			}
 

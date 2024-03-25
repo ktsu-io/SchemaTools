@@ -1,8 +1,9 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace ktsu.io.SchemaTools;
 
 using System.Text.Json.Serialization;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "We are implementing an enum type for a schema, so I think this is a valid use case")]
 public class SchemaEnum : SchemaChild<EnumName>
 {
 	[JsonPropertyName("Values")]
