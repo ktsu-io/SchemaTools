@@ -1,9 +1,9 @@
+namespace ktsu.io.SchemaTools;
+
 using ktsu.io.StrongPaths;
 using ktsu.io.CodeBlocker;
 using ktsu.io.OrdinalStringExtensions;
 using System.Collections.ObjectModel;
-
-namespace ktsu.io.SchemaTools;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
 public static class SchemaClassGenerator
@@ -84,7 +84,7 @@ public static class SchemaClassGenerator
 			{
 				foreach (var schemaEnum in schema.Enums)
 				{
-					using (var code = CodeBlocker.CodeBlocker.Create())
+					using (var code = CodeBlocker.Create())
 					{
 						string filename = $"Enum{schemaEnum.Name}.gen.h";
 						string filePath = Path.Combine(OutputPath, filename);
@@ -484,21 +484,7 @@ public static class SchemaClassGenerator
 		}
 	}
 
-	private static string GenerateNewForType(Schema.Types.BaseType type)
-	{
-		if (type is Schema.Types.String)
-		{
-			return $"string()";
-		}
-		else if (type.IsPrimitive || type is Schema.Types.Enum)
-		{
-			return $"{type}(0)";
-		}
-		else
-		{
-			return $"new {type}()";
-		}
-	}
+	private static string GenerateNewForType(Schema.Types.BaseType type) => type is Schema.Types.String ? $"string()" : type.IsPrimitive || type is Schema.Types.Enum ? $"{type}(0)" : $"new {type}()";
 
 	private static void GenerateDeepEqualsMember(SchemaMember schemaMember, CodeBlocker code)
 	{

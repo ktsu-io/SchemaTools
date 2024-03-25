@@ -1,8 +1,8 @@
-﻿
+namespace ktsu.io.SchemaTools;
+
 using System.Text.Json.Serialization;
 using ktsu.io.StrongStrings;
 
-namespace ktsu.io.SchemaTools;
 public abstract class SchemaChild<TName> where TName : AnyStrongString, new()
 {
 	[JsonInclude]

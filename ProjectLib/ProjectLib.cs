@@ -1,6 +1,6 @@
-using System.Xml;
-
 namespace ktsu.io.SchemaTools;
+
+using System.Xml;
 
 public class ProjectLib
 {

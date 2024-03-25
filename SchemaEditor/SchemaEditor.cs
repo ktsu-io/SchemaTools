@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
+namespace ktsu.io.SchemaTools;
+
+using System.Diagnostics;
 using System.Numerics;
 using ImGuiNET;
 using ktsu.io.StrongPaths;
-using ktsu.io.TrivialWinForms;
-
-namespace ktsu.io.SchemaTools;
+using ktsu.io.ImGuiApp;
+using ktsu.io.ImGuiWidgets;
 
 public class SchemaEditor
 {
@@ -62,20 +63,14 @@ public class SchemaEditor
 	}
 
 	//Dont call this directly, call QueueSaveOptions instead so that we can debounce the saves and avoid saving multiple times per frame or multiple frames in a row
-	private void SaveOptionsInternal()
-	{
-		Options.Save(this);
-	}
+	private void SaveOptionsInternal() => Options.Save();
 
-	private void QueueSaveOptions()
-	{
-		SaveOptionsQueuedTime = DateTime.Now;
-	}
+	private void QueueSaveOptions() => SaveOptionsQueuedTime = DateTime.Now;
 
 	private void SaveOptionsIfRequired()
 	{
 		//debounce the save requests and avoid saving multiple times per frame or multiple frames in a row
-		if (SaveOptionsQueuedTime > LastSaveOptionsTime && DateTime.Now - SaveOptionsQueuedTime > SaveOptionsDebounceTime)
+		if ((SaveOptionsQueuedTime > LastSaveOptionsTime) && ((DateTime.Now - SaveOptionsQueuedTime) > SaveOptionsDebounceTime))
 		{
 			SaveOptionsInternal();
 			LastSaveOptionsTime = DateTime.Now;

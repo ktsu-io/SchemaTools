@@ -1,8 +1,8 @@
-﻿
+namespace ktsu.io.SchemaTools;
+
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
-namespace ktsu.io.SchemaTools;
 public class SchemaClass : SchemaChild<ClassName>
 {
 	[JsonPropertyName("Members")]

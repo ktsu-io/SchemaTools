@@ -1,7 +1,7 @@
-﻿
+namespace ktsu.io.SchemaTools;
+
 using System.Text.Json.Serialization;
 
-namespace ktsu.io.SchemaTools;
 public class SchemaMember : SchemaClassChild<MemberName>
 {
 	[JsonInclude]

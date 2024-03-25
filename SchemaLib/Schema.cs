@@ -1,14 +1,12 @@
-﻿
+namespace ktsu.io.SchemaTools;
+
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ktsu.io.StrongPaths;
-using ktsu.io.StrongStrings;
+using StrongPaths;
+using StrongStrings;
 
-namespace ktsu.io.SchemaTools;
-#pragma warning disable CA1724 // "Type names should not match namespaces", you don't own the word "Schema" Microsoft
 public partial class Schema
-#pragma warning restore CA1724 // "Type names should not match namespaces"
 {
 	#region FilePaths
 	public const string FileSuffix = ".schema.json";
@@ -33,7 +31,7 @@ public partial class Schema
 		IgnoreReadOnlyFields = true,
 		IgnoreReadOnlyProperties = true,
 		IncludeFields = true,
-		Converters = 
+		Converters =
 		{
 			new JsonStringEnumConverter(),
 		}
@@ -110,7 +108,7 @@ public partial class Schema
 
 	public static void RemoveEnum(SchemaEnum schemaEnum) => RemoveChild(schemaEnum, schemaEnum?.ParentSchema?.Enums ?? throw new InvalidOperationException("Cannot remove an enum that is not assosciated with a schema"));
 	public static void RemoveClass(SchemaClass schemaClass) => RemoveChild(schemaClass, schemaClass?.ParentSchema?.Classes ?? throw new InvalidOperationException("Cannot remove a class that is not assosciated with a schema"));
-	
+
 	public static bool TryGetChild<TName, TChild>(TName name, Collection<TChild> collection, out TChild? child) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
 		ArgumentNullException.ThrowIfNull(name);

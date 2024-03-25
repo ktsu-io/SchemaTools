@@ -1,14 +1,14 @@
-﻿
-using System.Text.Json.Serialization;
-using ktsu.io.StrongStrings;
-
 namespace ktsu.io.SchemaTools;
+
+using System.Text.Json.Serialization;
+
 public partial class Schema
 {
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "We're mimicing those types in our schema.")]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "We're mimicing those types in our schema.")]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "We're mimicing those types in our schema.")]
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "I actually want the hierachy here")]
+
 	public static class Types
 	{
 		public static string TypeQualifier => $"{typeof(Types).FullName}+";
@@ -107,20 +107,7 @@ public partial class Schema
 		[JsonPolymorphic(TypeDiscriminatorPropertyName = "TypeName")]
 		public abstract class BaseType : SchemaMemberChild<BaseTypeName>, IEquatable<BaseType?>
 		{
-			public bool Equals(BaseType? other)
-			{
-				if (ReferenceEquals(this, other))
-				{
-					return true;
-				}
-
-				if (other?.GetType() != GetType())
-				{
-					return false;
-				}
-
-				return other.ToString() != ToString();
-			}
+			public bool Equals(BaseType? other) => ReferenceEquals(this, other) || ((other?.GetType()) == GetType() && other.ToString() != ToString());
 
 			public override bool Equals(object? obj) => Equals(obj as BaseType);
 			public override int GetHashCode() => HashCode.Combine(ToString());
@@ -134,12 +121,7 @@ public partial class Schema
 				}
 
 				var type = typeof(Types).GetNestedTypes().FirstOrDefault(t => t.Name == str);
-				if (type is null)
-				{
-					return null;
-				}
-
-				return Activator.CreateInstance(type);
+				return type is null ? null : Activator.CreateInstance(type);
 			}
 
 			public bool IsBuiltIn => BuiltIn.Contains(GetType());

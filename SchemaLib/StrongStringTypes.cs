@@ -1,8 +1,8 @@
-﻿
+namespace ktsu.io.SchemaTools;
+
 using ktsu.io.StrongPaths;
 using ktsu.io.StrongStrings;
 
-namespace ktsu.io.SchemaTools;
 public sealed record class BaseTypeName : StrongStringAbstract<BaseTypeName> { }
 public sealed record class ClassName : StrongStringAbstract<ClassName> { }
 public sealed record class MemberName : StrongStringAbstract<MemberName> { }
