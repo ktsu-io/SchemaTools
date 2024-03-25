@@ -9,10 +9,12 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
 		<RootNamespace>ktsu.io.SchemaTools</RootNamespace>
+		<AnalysisLevel>latest-recommended</AnalysisLevel>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.1" />
+	  <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
+	  <PackageReference Include="ktsu.io.OrdinalStringExtensions" Version="1.0.0-alpha.3" />
 	</ItemGroup>
 
   <ItemGroup>

@@ -1,10 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\ImGuiApp\ImGuiApp\ImGuiApp.csproj" />
+    <PackageReference Include="ktsu.io.AppDataStorage" Version="1.0.0-alpha.14" />
+    <PackageReference Include="ktsu.io.CaseConverter" Version="1.0.0-alpha.5" />
+    <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
+    <PackageReference Include="ktsu.io.Extensions" Version="1.0.0-alpha.12" />
+    <PackageReference Include="ktsu.io.ImGuiApp" Version="1.0.0-alpha.10" />
+    <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.13" />
+    <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
+    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.2" />
+    <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.1" />
+    <PackageReference Include="ktsu.io.TrivialWinForms" Version="1.0.0-alpha.4" />
     <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
-    <ProjectReference Include="..\ReusableWinForms\ReusableWinForms\ReusableWinForms.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
-
 </Project>
