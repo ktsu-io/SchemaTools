@@ -3,7 +3,6 @@
 		<PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
 		<PackageReference Include="ktsu.io.Extensions" Version="1.0.0-alpha.13" />
 		<PackageReference Include="ktsu.io.StrongPaths" Version="1.0.6" />
-		<ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
 		<ProjectReference Include="..\ProjectLib\ProjectLib.csproj" />
 		<ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
 	</ItemGroup>

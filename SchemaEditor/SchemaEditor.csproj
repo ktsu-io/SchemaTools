@@ -12,7 +12,6 @@
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
     <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.6" />
     <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.1" />
-    <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
 </Project>

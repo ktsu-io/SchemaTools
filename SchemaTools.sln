@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SchemaClassGenerator", "Sch
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectLib", "ProjectLib\ProjectLib.csproj", "{15BF217D-DA6C-493A-8C39-B666064773A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pathfinder", "Pathfinder\Pathfinder.csproj", "{5F47DDC4-0D45-4302-A940-97462962E275}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataSourceGenerator", "DataSourceGenerator\DataSourceGenerator.csproj", "{74CDB8F0-90C9-4C2A-A3A9-E561B170E756}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataEditor", "DataEditor\DataEditor.csproj", "{DABB8F89-8276-473B-A950-29669B14CD80}"
@@ -39,10 +37,6 @@ Global
 		{15BF217D-DA6C-493A-8C39-B666064773A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15BF217D-DA6C-493A-8C39-B666064773A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15BF217D-DA6C-493A-8C39-B666064773A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5F47DDC4-0D45-4302-A940-97462962E275}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5F47DDC4-0D45-4302-A940-97462962E275}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5F47DDC4-0D45-4302-A940-97462962E275}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5F47DDC4-0D45-4302-A940-97462962E275}.Release|Any CPU.Build.0 = Release|Any CPU
 		{74CDB8F0-90C9-4C2A-A3A9-E561B170E756}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{74CDB8F0-90C9-4C2A-A3A9-E561B170E756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74CDB8F0-90C9-4C2A-A3A9-E561B170E756}.Release|Any CPU.ActiveCfg = Release|Any CPU
