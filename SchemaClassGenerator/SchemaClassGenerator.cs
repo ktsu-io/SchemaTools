@@ -28,7 +28,7 @@ public static class SchemaClassGenerator
 		foreach (string schemaFilePath in files)
 		{
 			Console.WriteLine($"Reading: {Path.GetFileName(schemaFilePath)}");
-			if (Schema.TryLoad((FilePath)schemaFilePath, out var schema) && schema != null)
+			if (Schema.TryLoad((AbsoluteFilePath)schemaFilePath, out var schema) && schema != null)
 			{
 				foreach (var schemaEnum in schema.Enums)
 				{

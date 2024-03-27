@@ -13,7 +13,7 @@ public partial class Schema
 	#region FilePaths
 	public const string FileSuffix = ".schema.json";
 
-	public FilePath FilePath { get; private set; } = new();
+	public AbsoluteFilePath FilePath { get; private set; } = new();
 	public DirectoryPath? DataSourcePath { get; set; }
 	#endregion
 
@@ -39,7 +39,7 @@ public partial class Schema
 		}
 	};
 
-	public static bool TryLoad(FilePath filePath, out Schema? schema)
+	public static bool TryLoad(AbsoluteFilePath filePath, out Schema? schema)
 	{
 		schema = null;
 
@@ -98,7 +98,7 @@ public partial class Schema
 		File.Delete(bkFilePath);
 	}
 
-	public void ChangeFilePath(FilePath newFilePath) => FilePath = newFilePath;
+	public void ChangeFilePath(AbsoluteFilePath newFilePath) => FilePath = newFilePath;
 
 	public static void RemoveChild<TChild>(TChild child, Collection<TChild> collection)
 	{
