@@ -110,7 +110,7 @@ public partial class Schema
 			public override int GetHashCode() => HashCode.Combine(ToString());
 			public override string ToString() => GetType().Name ?? string.Empty;
 
-			public static object? FromString(string? str)
+			public static object? CreateFromString(string? str)
 			{
 				if (string.IsNullOrEmpty(str))
 				{

@@ -569,6 +569,10 @@ public class SchemaEditor
 			if (string.IsNullOrEmpty(CurrentSchema.FilePath))
 			{
 				ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
+				if (ImGui.Button("Save Now"))
+				{
+					JobQueue.Enqueue(SaveAs);
+				}
 				return;
 			}
 

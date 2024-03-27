@@ -5,8 +5,9 @@ namespace ktsu.io.SchemaTools;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using StrongPaths;
-using StrongStrings;
+using ktsu.io.StrongPaths;
+using ktsu.io.StrongStrings;
+using ktsu.io.StringifyJsonConvertorFactory;
 
 public partial class Schema
 {
@@ -36,6 +37,7 @@ public partial class Schema
 		Converters =
 		{
 			new JsonStringEnumConverter(),
+			new StringifyJsonConvertorFactory(),
 		}
 	};
 
