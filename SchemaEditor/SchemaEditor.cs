@@ -32,7 +32,7 @@ public class SchemaEditor
 			title += $" - {schemaEditor.CurrentSchema.FilePath.FileName}";
 		}
 
-		ImGuiApp.Start(title, schemaEditor.Options.WindowState, schemaEditor.Tick, schemaEditor.ShowMenu, schemaEditor.WindowResized);
+		ImGuiApp.Start(title, schemaEditor.Options.WindowState, schemaEditor.OnStart, schemaEditor.OnTick, schemaEditor.OnMenu, schemaEditor.OnWindowResized);
 	}
 
 	public SchemaEditor()
@@ -40,9 +40,13 @@ public class SchemaEditor
 		DividerContainerCols = new("RootDivider", DividerResized);
 		Options = SchemaEditorOptions.LoadOrCreate();
 		PopupFilesystemBrowser = Options.PopupFilesystemBrowser;
-		RestoreOptions();
 		DividerContainerCols.Add("Left", 0.25f, ShowLeftPanel);
 		DividerContainerCols.Add("Right", 0.75f, ShowRightPanel);
+		RestoreOptions();
+	}
+
+	private void OnStart()
+	{
 	}
 
 	private void RestoreOptions()
@@ -51,7 +55,7 @@ public class SchemaEditor
 		RestoreDividerStates();
 	}
 
-	private void WindowResized() => QueueSaveOptions();
+	private void OnWindowResized() => QueueSaveOptions();
 
 	private void DividerResized(DividerContainer container)
 	{
@@ -86,7 +90,7 @@ public class SchemaEditor
 		}
 	}
 
-	private void Tick(float dt)
+	private void OnTick(float dt)
 	{
 		while (JobQueue.Count > 0)
 		{
@@ -151,7 +155,7 @@ public class SchemaEditor
 		}
 	}
 
-	private void ShowMenu()
+	private void OnMenu()
 	{
 		// Use the JobQueue to avoid calling popup functions from within the menu
 		if (ImGui.BeginMenu("File"))
