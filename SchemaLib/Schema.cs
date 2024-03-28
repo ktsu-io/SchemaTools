@@ -13,10 +13,9 @@ using System.Reflection;
 public partial class Schema
 {
 	#region FilePaths
-	public const string FileSuffix = ".schema.json";
-
+	public static FileExtension FileExtension { get; } = (FileExtension)".schema.json";
 	public AbsoluteFilePath FilePath { get; private set; } = new();
-	public DirectoryPath? DataSourcePath { get; set; }
+	public SchemaPaths Paths { get; init; } = new();
 	#endregion
 
 	#region Serializable Properties
