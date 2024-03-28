@@ -12,7 +12,8 @@ public class SchemaClass : SchemaChild<ClassName>
 
 	public IReadOnlyList<SchemaMember> Members => MemberList;
 
-	public bool TryAddMember(MemberName memberName) => ParentSchema?.TryAddChild(memberName, MemberList) ?? throw new NotSupportedException("SchemaClass must be associated with a Schema before adding members");
+	public SchemaMember? AddMember(MemberName memberName) => ParentSchema?.AddChild(memberName, MemberList) ?? throw new NotSupportedException("SchemaClass must be associated with a Schema before adding members");
+	public bool TryAddMember(MemberName memberName) => AddMember(memberName) is not null;
 
 
 	public bool TryGetMember(MemberName memberName, out SchemaMember? schemaMember) => Schema.TryGetChild(memberName, MemberList, out schemaMember);

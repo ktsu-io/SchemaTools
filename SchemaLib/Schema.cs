@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using ktsu.io.StrongPaths;
 using ktsu.io.StrongStrings;
 using ktsu.io.StringifyJsonConvertorFactory;
+using System.Reflection;
 
 public partial class Schema
 {
@@ -126,7 +127,7 @@ public partial class Schema
 	public bool TryGetClass(ClassName name, out SchemaClass? schemaClass) => TryGetChild(name, Classes, out schemaClass);
 
 
-	public bool TryAddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
+	public TChild? AddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
 		ArgumentNullException.ThrowIfNull(name);
 		ArgumentNullException.ThrowIfNull(collection);
@@ -138,14 +139,120 @@ public partial class Schema
 			newChild.AssosciateWith(this);
 			collection.Add(newChild);
 
-			return true;
+			return newChild;
 		}
 
-		return false;
+		return null;
 	}
+
+	public bool TryAddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new() =>
+		AddChild(name, collection) is not null;
 
 	public bool TryAddEnum(EnumName name) => TryAddChild(name, Enums);
 	public bool TryAddClass(ClassName name) => TryAddChild(name, Classes);
+	public SchemaEnum? AddEnum(EnumName name) => AddChild(name, Enums);
+	public SchemaClass? AddClass(ClassName name) => AddChild(name, Classes);
+
+	public bool TryAddClass(Type type) => AddClass(type) is not null;
+
+	public SchemaClass? AddClass(Type type)
+	{
+		if (type is not null)
+		{
+			SchemaClass newClass = new();
+			newClass.Rename((ClassName)type.Name);
+			newClass.AssosciateWith(this);
+			foreach (var member in type.GetMembers())
+			{
+				var memberType = member switch
+				{
+					PropertyInfo propertyInfo => propertyInfo.PropertyType,
+					FieldInfo fieldInfo => fieldInfo.FieldType,
+					_ => null
+				};
+
+				if (memberType is not null)
+				{
+					var schemaType = GetOrCreateSchemaType(memberType);
+					if (schemaType is not null)
+					{
+						var newMember = newClass.AddMember((MemberName)member.Name);
+						newMember?.SetType(schemaType);
+					}
+				}
+			}
+
+			Classes.Add(newClass);
+
+			return newClass;
+		}
+
+		return null;
+	}
+
+	private Types.BaseType? GetOrCreateSchemaType(Type type)
+	{
+		bool isEnumerable = type.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+		if (type.IsArray || isEnumerable)
+		{
+			var elementType = type.HasElementType ? type.GetElementType() : type.GetGenericArguments().LastOrDefault();
+			if (elementType is not null)
+			{
+				var schemaType = GetOrCreateSchemaType(elementType);
+				if (schemaType is not null)
+				{
+					return new Types.Array { ElementType = schemaType };
+				}
+			}
+		}
+		else if (type.IsEnum)
+		{
+			var enumName = (EnumName)type.Name;
+			if (!TryGetEnum(enumName, out var schemaEnum))
+			{
+				schemaEnum = AddEnum(enumName);
+				foreach (string name in Enum.GetNames(type))
+				{
+					schemaEnum?.TryAddValue((EnumValueName)name);
+				}
+			}
+
+			if (schemaEnum is not null)
+			{
+				return new Types.Enum { EnumName = schemaEnum.Name };
+			}
+		}
+		else if (type.IsPrimitive || type.FullName == "System.String")
+		{
+			string typeName = type.Name switch
+			{
+				"Int32" => "Int",
+				"Int64" => "Long",
+				"Single" => "Float",
+				"Double" => "Double",
+				"String" => "String",
+				"DateTime" => "DateTime",// ?
+				"TimeSpan" => "TimeSpan",// ?
+				"Boolean" => "Bool",
+				_ => "",
+			};
+
+			return Types.BaseType.CreateFromString(typeName) as Types.BaseType;
+		}
+		else if (type.IsClass)
+		{
+			if (!TryGetClass((ClassName)type.Name, out var memberClass))
+			{
+				memberClass = AddClass(type);
+			}
+
+			if (memberClass is not null)
+			{
+				return new Types.Object { ClassName = memberClass.Name };
+			}
+		}
+		return null;
+	}
 
 	public SchemaClass? GetFirstClass() => Classes.FirstOrDefault();
 	public SchemaClass? GetLastClass() => Classes.LastOrDefault();
