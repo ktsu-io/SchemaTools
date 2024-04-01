@@ -15,7 +15,11 @@ public partial class Schema
 	#region FilePaths
 	public static FileExtension FileExtension { get; } = (FileExtension)".schema.json";
 	public AbsoluteFilePath FilePath { get; private set; } = new();
-	public SchemaPaths Paths { get; init; } = new();
+	public SchemaPaths RelativePaths { get; init; } = new();
+	[JsonIgnore]
+	public AbsoluteDirectoryPath ProjectRootPath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;
+	[JsonIgnore]
+	public AbsoluteDirectoryPath DataSourcePath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;
 	#endregion
 
 	#region Serializable Properties

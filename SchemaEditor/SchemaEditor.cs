@@ -585,17 +585,17 @@ public class SchemaEditor
 			ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
 
 			// Ensure the project root path is set
-			if (string.IsNullOrEmpty(CurrentSchema.Paths.ProjectRootPath))
+			if (string.IsNullOrEmpty(CurrentSchema.RelativePaths.RelativeProjectRootPath))
 			{
 				ImGui.TextUnformatted("Set the path of the project's root directory.");
 				ShowSetProjectRoot();
 				return;
 			}
 
-			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.Paths.ProjectRootPath}");
+			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
 			// Ensure the schema is still in the correct location
 			var absoluteSchemaPath = (AbsoluteFilePath)Path.GetFullPath(CurrentSchema.FilePath);
-			var expectedProjectRoot = (AbsoluteDirectoryPath)Path.GetFullPath(CurrentSchema.FilePath.DirectoryPath / CurrentSchema.Paths.ProjectRootPath);
+			var expectedProjectRoot = (AbsoluteDirectoryPath)Path.GetFullPath(CurrentSchema.FilePath.DirectoryPath / CurrentSchema.RelativePaths.RelativeProjectRootPath);
 			var expectedRelativeSchemaPath = (RelativeFilePath)absoluteSchemaPath.WeakString.RemovePrefix(expectedProjectRoot);
 			var expectedSchemaPath = expectedProjectRoot / expectedRelativeSchemaPath;
 			if (Path.GetFullPath(expectedSchemaPath) != Path.GetFullPath(absoluteSchemaPath))
@@ -608,14 +608,14 @@ public class SchemaEditor
 				return;
 			}
 
-			ImGui.TextUnformatted($"Data Path: {CurrentSchema.Paths.DataSourcePath}");
+			ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
 			ImGui.SameLine();
 			if (ImGui.Button("Set Data Path"))
 			{
 				JobQueue.Enqueue(() =>
 				PopupFilesystemBrowser.ChooseDirectory("Select Data Path", (path) =>
 				{
-					CurrentSchema.Paths.DataSourcePath = path.RelativeTo(CurrentSchema.Paths.ProjectRootPath);
+					CurrentSchema.RelativePaths.RelativeDataSourcePath = path.RelativeTo(CurrentSchema.ProjectRootPath);
 				}));
 			}
 		}
@@ -627,7 +627,7 @@ public class SchemaEditor
 				JobQueue.Enqueue(() =>
 				PopupFilesystemBrowser.ChooseDirectory("Select Project Root", (path) =>
 				{
-					CurrentSchema.Paths.ProjectRootPath = path.RelativeTo(CurrentSchema.FilePath);
+					CurrentSchema.RelativePaths.RelativeProjectRootPath = path.RelativeTo(CurrentSchema.FilePath);
 				}));
 			}
 		}

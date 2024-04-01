@@ -6,6 +6,6 @@ using ktsu.io.StrongPaths;
 
 public class SchemaPaths
 {
-	public RelativeDirectoryPath ProjectRootPath { get; set; } = new();
-	public RelativeDirectoryPath? DataSourcePath { get; set; }
+	public RelativeDirectoryPath RelativeProjectRootPath { get; set; } = new();
+	public RelativeDirectoryPath? RelativeDataSourcePath { get; set; }
 }
