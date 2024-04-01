@@ -15,6 +15,7 @@ public partial class Schema
 	#region FilePaths
 	public static FileExtension FileExtension { get; } = (FileExtension)".schema.json";
 	public AbsoluteFilePath FilePath { get; private set; } = new();
+	[JsonInclude]
 	public SchemaPaths RelativePaths { get; init; } = new();
 	[JsonIgnore]
 	public AbsoluteDirectoryPath ProjectRootPath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;

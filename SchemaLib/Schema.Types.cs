@@ -63,6 +63,14 @@ public partial class Schema
 			public override string ToString() => ClassName;
 		}
 
+		public class SystemObject : Object { }
+		public class Vector : SystemObject { }
+		public class Vector2 : Vector { }
+		public class Vector3 : Vector { }
+		public class Vector4 : Vector { }
+		public class ColorRGB : Vector3 { }
+		public class ColorRGBA : Vector4 { }
+
 		public static HashSet<Type> BuiltIn => new()
 		{
 			typeof(Int),
@@ -75,6 +83,11 @@ public partial class Schema
 			typeof(Bool),
 			typeof(Enum),
 			typeof(Array),
+			typeof(Vector2),
+			typeof(Vector3),
+			typeof(Vector4),
+			typeof(ColorRGB),
+			typeof(ColorRGBA),
 		};
 
 		public static HashSet<Type> Primitives => new()
@@ -89,6 +102,13 @@ public partial class Schema
 			typeof(Bool),
 		};
 
+		public static Dictionary<Type, Type> SystemTypes => new()
+		{
+			{ typeof(Vector2), typeof(System.Numerics.Vector2) },
+			{ typeof(Vector3), typeof(System.Numerics.Vector3) },
+			{ typeof(Vector4), typeof(System.Numerics.Vector4) },
+		};
+
 		[JsonDerivedType(typeof(None), nameof(None))]
 		[JsonDerivedType(typeof(Int), nameof(Int))]
 		[JsonDerivedType(typeof(Long), nameof(Long))]
@@ -100,6 +120,11 @@ public partial class Schema
 		[JsonDerivedType(typeof(Bool), nameof(Bool))]
 		[JsonDerivedType(typeof(Enum), nameof(Enum))]
 		[JsonDerivedType(typeof(Array), nameof(Array))]
+		[JsonDerivedType(typeof(Vector2), nameof(Vector2))]
+		[JsonDerivedType(typeof(Vector3), nameof(Vector3))]
+		[JsonDerivedType(typeof(Vector4), nameof(Vector4))]
+		[JsonDerivedType(typeof(ColorRGB), nameof(ColorRGB))]
+		[JsonDerivedType(typeof(ColorRGBA), nameof(ColorRGBA))]
 		[JsonDerivedType(typeof(Object), nameof(Object))]
 		[JsonPolymorphic(TypeDiscriminatorPropertyName = "TypeName")]
 		public abstract class BaseType : SchemaMemberChild<BaseTypeName>, IEquatable<BaseType?>
@@ -142,6 +167,7 @@ public partial class Schema
 				_ => false,
 			};
 			public bool IsObject => this is Object;
+			public bool IsSystemObject => this is SystemObject;
 			public bool IsArray => this is Array;
 			public bool IsComplexArray => this is Array array && array.ElementType.IsObject;
 			public bool IsPrimitiveArray => this is Array array && array.ElementType.IsPrimitive;
