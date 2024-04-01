@@ -21,7 +21,7 @@ public static class SchemaClassGenerator
 		project.PurgeCPPFiles(f => f.EndsWithOrdinal(GeneratedSuffixHeader) || f.EndsWithOrdinal(GeneratedSuffixCode));
 		filters.PurgeCPPFiles(f => f.EndsWithOrdinal(GeneratedSuffixHeader) || f.EndsWithOrdinal(GeneratedSuffixCode));
 
-		var files = Directory.EnumerateFiles(inputPath, $"*{Schema.FileSuffix}", SearchOption.AllDirectories);
+		var files = Directory.EnumerateFiles(inputPath, $"*{Schema.FileExtension}", SearchOption.AllDirectories);
 
 		Console.WriteLine("Generating Schema Classes");
 
