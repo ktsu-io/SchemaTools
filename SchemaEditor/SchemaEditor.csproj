@@ -4,13 +4,13 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ktsu.io.AppDataStorage" Version="1.0.0-alpha.14" />
-    <PackageReference Include="ktsu.io.CaseConverter" Version="1.0.0-alpha.5" />
-    <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0-alpha.4" />
-    <PackageReference Include="ktsu.io.Extensions" Version="1.0.0-alpha.13" />
-    <PackageReference Include="ktsu.io.ImGuiApp" Version="1.0.0-alpha.13" />
+    <PackageReference Include="ktsu.io.CaseConverter" Version="1.0.0" />
+    <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0" />
+    <PackageReference Include="ktsu.io.Extensions" Version="1.0.0" />
+    <PackageReference Include="ktsu.io.ImGuiApp" Version="1.0.0-alpha.14" />
     <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.18" />
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
-    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.7" />
+    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.8" />
     <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.1" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
