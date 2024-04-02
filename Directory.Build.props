@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>$([System.IO.File]::ReadAllText($([MSBuild]::GetPathOfFileAbove("AUTHORS"))))</Authors>

@@ -8,6 +8,7 @@ using ImGuiNET;
 using ktsu.io.Extensions;
 using ktsu.io.ImGuiApp;
 using ktsu.io.ImGuiWidgets;
+using ktsu.io.SchemaEditor;
 using ktsu.io.StrongPaths;
 
 public class SchemaEditor
@@ -574,7 +575,11 @@ public class SchemaEditor
 		{
 			if (string.IsNullOrEmpty(CurrentSchema.FilePath))
 			{
-				ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
+				using (Style.Text.Color.Info())
+				{
+					ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
+				}
+
 				if (ImGui.Button("Save Now"))
 				{
 					JobQueue.Enqueue(SaveAs);
@@ -584,29 +589,9 @@ public class SchemaEditor
 
 			ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
 
-			// Ensure the project root path is set
-			if (string.IsNullOrEmpty(CurrentSchema.RelativePaths.RelativeProjectRootPath))
-			{
-				ImGui.TextUnformatted("Set the path of the project's root directory.");
-				ShowSetProjectRoot();
-				return;
-			}
-
-			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
-			// Ensure the schema is still in the correct location
-			var absoluteSchemaPath = (AbsoluteFilePath)Path.GetFullPath(CurrentSchema.FilePath);
-			var expectedProjectRoot = (AbsoluteDirectoryPath)Path.GetFullPath(CurrentSchema.FilePath.DirectoryPath / CurrentSchema.RelativePaths.RelativeProjectRootPath);
-			var expectedRelativeSchemaPath = (RelativeFilePath)absoluteSchemaPath.WeakString.RemovePrefix(expectedProjectRoot);
-			var expectedSchemaPath = expectedProjectRoot / expectedRelativeSchemaPath;
-			if (Path.GetFullPath(expectedSchemaPath) != Path.GetFullPath(absoluteSchemaPath))
-			{
-				ImGui.TextUnformatted("Schema appears to have been moved.");
-				ImGui.TextUnformatted($"Expected: {expectedSchemaPath}");
-				ImGui.TextUnformatted($"Actual: {absoluteSchemaPath}");
-				ImGui.TextUnformatted("Reset the path of the project's root directory.");
-				ShowSetProjectRoot();
-				return;
-			}
+			ValidateProjectRootIsSet();
+			ShowSetProjectRoot();
+			ValidateSchemaLocation();
 
 			ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
 			ImGui.SameLine();
@@ -619,9 +604,26 @@ public class SchemaEditor
 				}));
 			}
 		}
+	}
 
-		void ShowSetProjectRoot()
+	private void ValidateProjectRootIsSet()
+	{
+		if (string.IsNullOrEmpty(CurrentSchema?.RelativePaths.RelativeProjectRootPath))
 		{
+			using (Style.Text.Color.Info())
+			{
+				ImGui.TextUnformatted("Set the path of the project's root directory.");
+			}
+			return;
+		}
+	}
+
+	private void ShowSetProjectRoot()
+	{
+		if (CurrentSchema is not null)
+		{
+			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
+			ImGui.SameLine();
 			if (ImGui.Button("Set Project Root"))
 			{
 				JobQueue.Enqueue(() =>
@@ -629,6 +631,30 @@ public class SchemaEditor
 				{
 					CurrentSchema.RelativePaths.RelativeProjectRootPath = path.RelativeTo(CurrentSchema.FilePath);
 				}));
+			}
+		}
+	}
+
+	private void ValidateSchemaLocation()
+	{
+		if (CurrentSchema is not null)
+		{
+			var absoluteSchemaPath = (AbsoluteFilePath)Path.GetFullPath(CurrentSchema.FilePath);
+			var expectedProjectRoot = (AbsoluteDirectoryPath)Path.GetFullPath(CurrentSchema.FilePath.DirectoryPath / CurrentSchema.RelativePaths.RelativeProjectRootPath);
+			var expectedRelativeSchemaPath = (RelativeFilePath)absoluteSchemaPath.WeakString.RemovePrefix(expectedProjectRoot);
+			var expectedSchemaPath = expectedProjectRoot / expectedRelativeSchemaPath;
+			if (Path.GetFullPath(expectedSchemaPath) != Path.GetFullPath(absoluteSchemaPath))
+			{
+				using (Style.Text.Color.Error())
+				{
+					ImGui.TextUnformatted("Schema appears to have been moved.");
+					ImGui.TextUnformatted("Reset the path of the project's root directory.");
+				}
+
+				ImGui.TextUnformatted($"Expected: {expectedSchemaPath}");
+				ImGui.TextUnformatted($"Actual: {absoluteSchemaPath}");
+
+				return;
 			}
 		}
 	}

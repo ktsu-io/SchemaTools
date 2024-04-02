@@ -1,11 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Pathfinder\Pathfinder.csproj" />
     <ProjectReference Include="..\SchemaEditor\SchemaEditor.csproj" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
-
 </Project>
