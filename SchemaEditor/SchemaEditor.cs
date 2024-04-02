@@ -589,24 +589,27 @@ public class SchemaEditor
 
 			ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
 
-			ValidateProjectRootIsSet();
+			bool projectRootIsSet = ValidateProjectRootIsSet();
 			ShowSetProjectRoot();
-			ValidateSchemaLocation();
+			bool schemaLocationIsValid = ValidateSchemaLocation();
 
-			ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
-			ImGui.SameLine();
-			if (ImGui.Button("Set Data Path"))
+			if (projectRootIsSet && schemaLocationIsValid)
 			{
-				JobQueue.Enqueue(() =>
-				PopupFilesystemBrowser.ChooseDirectory("Select Data Path", (path) =>
+				ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
+				ImGui.SameLine();
+				if (ImGui.Button("Set Data Path"))
 				{
-					CurrentSchema.RelativePaths.RelativeDataSourcePath = path.RelativeTo(CurrentSchema.ProjectRootPath);
-				}));
+					JobQueue.Enqueue(() =>
+					PopupFilesystemBrowser.ChooseDirectory("Select Data Path", (path) =>
+					{
+						CurrentSchema.RelativePaths.RelativeDataSourcePath = path.RelativeTo(CurrentSchema.ProjectRootPath);
+					}));
+				}
 			}
 		}
 	}
 
-	private void ValidateProjectRootIsSet()
+	private bool ValidateProjectRootIsSet()
 	{
 		if (string.IsNullOrEmpty(CurrentSchema?.RelativePaths.RelativeProjectRootPath))
 		{
@@ -614,8 +617,10 @@ public class SchemaEditor
 			{
 				ImGui.TextUnformatted("Set the path of the project's root directory.");
 			}
-			return;
+			return false;
 		}
+
+		return true;
 	}
 
 	private void ShowSetProjectRoot()
@@ -635,7 +640,7 @@ public class SchemaEditor
 		}
 	}
 
-	private void ValidateSchemaLocation()
+	private bool ValidateSchemaLocation()
 	{
 		if (CurrentSchema is not null)
 		{
@@ -654,8 +659,10 @@ public class SchemaEditor
 				ImGui.TextUnformatted($"Expected: {expectedSchemaPath}");
 				ImGui.TextUnformatted($"Actual: {absoluteSchemaPath}");
 
-				return;
+				return false;
 			}
 		}
+
+		return true;
 	}
 }
