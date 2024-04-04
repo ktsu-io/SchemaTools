@@ -3,7 +3,7 @@ using ktsu.io.AppDataStorage;
 using ktsu.io.StrongPaths;
 using ktsu.io.ImGuiApp;
 using System.Collections.ObjectModel;
-using ktsu.io.ImGuiWidgets;
+using ktsu.io.SchemaEditor;
 
 internal class SchemaEditorOptions : AppData<SchemaEditorOptions>
 {
@@ -12,5 +12,5 @@ internal class SchemaEditorOptions : AppData<SchemaEditorOptions>
 	public ImGuiAppWindowState WindowState { get; set; } = new();
 	public Dictionary<string, bool> PanelStates { get; set; } = new();
 	public Dictionary<string, Collection<float>> DividerStates { get; set; } = new();
-	public PopupFilesystemBrowser PopupFilesystemBrowser { get; set; } = new();
+	public Popups Popups { get; set; } = new();
 }

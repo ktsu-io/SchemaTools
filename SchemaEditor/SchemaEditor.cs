@@ -21,10 +21,8 @@ public class SchemaEditor
 	private DateTime SaveOptionsQueuedTime { get; set; } = DateTime.MinValue;
 	private TimeSpan SaveOptionsDebounceTime { get; } = TimeSpan.FromSeconds(3);
 	private DividerContainer DividerContainerCols { get; }
-	private PopupMessageOK PopupMessageOK { get; } = new();
-	private PopupInputString PopupInputString { get; } = new();
-	private PopupFilesystemBrowser PopupFilesystemBrowser { get; }
-	private Queue<Action> JobQueue { get; } = new();
+	private Popups Popups { get; } = new();
+
 	[STAThread]
 	private static void Main(string[] _)
 	{
@@ -42,7 +40,7 @@ public class SchemaEditor
 	{
 		DividerContainerCols = new("RootDivider", DividerResized);
 		Options = SchemaEditorOptions.LoadOrCreate();
-		PopupFilesystemBrowser = Options.PopupFilesystemBrowser;
+		Popups = Options.Popups;
 		DividerContainerCols.Add("Left", 0.25f, ShowLeftPanel);
 		DividerContainerCols.Add("Right", 0.75f, ShowRightPanel);
 		RestoreOptions();
@@ -77,7 +75,7 @@ public class SchemaEditor
 	//Dont call this directly, call QueueSaveOptions instead so that we can debounce the saves and avoid saving multiple times per frame or multiple frames in a row
 	private void SaveOptionsInternal()
 	{
-		Options.PopupFilesystemBrowser = PopupFilesystemBrowser;
+		Options.Popups = Popups;
 		Options.Save();
 	}
 
@@ -95,18 +93,11 @@ public class SchemaEditor
 
 	private void OnTick(float dt)
 	{
-		while (JobQueue.Count > 0)
-		{
-			var job = JobQueue.Dequeue();
-			job();
-		}
-
 		DividerContainerCols.Tick(dt);
 
 		SaveOptionsIfRequired();
 
-		PopupMessageOK.ShowIfOpen();
-		PopupFilesystemBrowser.ShowIfOpen();
+		Popups.Update();
 	}
 
 	private void ShowLeftPanel(float dt)
@@ -165,17 +156,17 @@ public class SchemaEditor
 		{
 			if (ImGui.MenuItem("New"))
 			{
-				JobQueue.Enqueue(New);
+				New();
 			}
 
 			if (ImGui.MenuItem("Open"))
 			{
-				JobQueue.Enqueue(Open);
+				Open();
 			}
 
 			if (ImGui.MenuItem("Save"))
 			{
-				JobQueue.Enqueue(Save);
+				Save();
 			}
 
 			ImGui.Separator();
@@ -202,7 +193,7 @@ public class SchemaEditor
 
 	private void Open()
 	{
-		PopupFilesystemBrowser.FileOpen("Open Schema", (filePath) =>
+		Popups.OpenBrowserFileOpen("Open Schema", (filePath) =>
 		{
 			Reset();
 			if (Schema.TryLoad(filePath, out var schema) && schema != null)
@@ -213,7 +204,7 @@ public class SchemaEditor
 			}
 			else
 			{
-				PopupMessageOK.Open("Error", "Failed to load schema.");
+				Popups.OpenMessageOK("Error", "Failed to load schema.");
 			}
 		}, "*.schema.json");
 	}
@@ -231,7 +222,7 @@ public class SchemaEditor
 
 	private void SaveAs()
 	{
-		PopupFilesystemBrowser.FileSave("Save Schema", (filePath) =>
+		Popups.OpenBrowserFileSave("Save Schema", (filePath) =>
 		{
 			CurrentSchema?.ChangeFilePath(filePath);
 			Save();
@@ -245,7 +236,7 @@ public class SchemaEditor
 		{
 			if (ImGui.Button("Add Enum", new Vector2(FieldWidth, 0)))
 			{
-				PopupInputString.Open("Input", "New Enum Name", string.Empty, (newName) =>
+				Popups.OpenInputString("Input", "New Enum Name", string.Empty, (newName) =>
 				{
 					if (CurrentSchema.TryAddEnum((EnumName)newName))
 					{
@@ -253,7 +244,7 @@ public class SchemaEditor
 					}
 					else
 					{
-						PopupMessageOK.Open("Error", $"An Enum with that name ({newName}) already exists.");
+						Popups.OpenMessageOK("Error", $"An Enum with that name ({newName}) already exists.");
 					}
 				});
 			}
@@ -266,7 +257,7 @@ public class SchemaEditor
 		{
 			if (ImGui.Button("Add Class", new Vector2(FieldWidth, 0)))
 			{
-				PopupInputString.Open("Input", "New Class Name", string.Empty, (newName) =>
+				Popups.OpenInputString("Input", "New Class Name", string.Empty, (newName) =>
 				{
 					if (CurrentSchema.TryAddClass((ClassName)newName))
 					{
@@ -275,7 +266,7 @@ public class SchemaEditor
 					}
 					else
 					{
-						PopupMessageOK.Open("Error", $"A Class with that name ({newName}) already exists.");
+						Popups.OpenMessageOK("Error", $"A Class with that name ({newName}) already exists.");
 					}
 				});
 			}
@@ -288,7 +279,7 @@ public class SchemaEditor
 		{
 			if (ImGui.Button("Add Member", new Vector2(FieldWidth, 0)))
 			{
-				PopupInputString.Open("Input", "New Member Name", string.Empty, (newName) =>
+				Popups.OpenInputString("Input", "New Member Name", string.Empty, (newName) =>
 				{
 					if (CurrentClass.TryAddMember((MemberName)newName))
 					{
@@ -296,7 +287,7 @@ public class SchemaEditor
 					}
 					else
 					{
-						PopupMessageOK.Open("Error", $"A Member with that name ({newName}) already exists.");
+						Popups.OpenMessageOK("Error", $"A Member with that name ({newName}) already exists.");
 					}
 				});
 			}
@@ -324,11 +315,11 @@ public class SchemaEditor
 				ImGui.SameLine();
 				if (ImGui.Button($"+##addEnumValue{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
 				{
-					PopupInputString.Open("Input", "New Enum Value", string.Empty, (newValue) =>
+					Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
 					{
 						if (!schemaEnum.TryAddValue((EnumValueName)newValue))
 						{
-							PopupMessageOK.Open("Error", $"A Enum Value with that name ({newValue}) already exists.");
+							Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
 						}
 					});
 				}
@@ -582,7 +573,7 @@ public class SchemaEditor
 
 				if (ImGui.Button("Save Now"))
 				{
-					JobQueue.Enqueue(SaveAs);
+					SaveAs();
 				}
 				return;
 			}
@@ -599,11 +590,10 @@ public class SchemaEditor
 				ImGui.SameLine();
 				if (ImGui.Button("Set Data Path"))
 				{
-					JobQueue.Enqueue(() =>
-					PopupFilesystemBrowser.ChooseDirectory("Select Data Path", (path) =>
+					Popups.OpenBrowserDirectory("Select Data Path", (path) =>
 					{
 						CurrentSchema.RelativePaths.RelativeDataSourcePath = path.RelativeTo(CurrentSchema.ProjectRootPath);
-					}));
+					});
 				}
 			}
 		}
@@ -631,11 +621,10 @@ public class SchemaEditor
 			ImGui.SameLine();
 			if (ImGui.Button("Set Project Root"))
 			{
-				JobQueue.Enqueue(() =>
-				PopupFilesystemBrowser.ChooseDirectory("Select Project Root", (path) =>
+				Popups.OpenBrowserDirectory("Select Project Root", (path) =>
 				{
 					CurrentSchema.RelativePaths.RelativeProjectRootPath = path.RelativeTo(CurrentSchema.FilePath);
-				}));
+				});
 			}
 		}
 	}
