@@ -30,7 +30,7 @@ public static class SchemaClassGenerator
 			Console.WriteLine($"Reading: {Path.GetFileName(schemaFilePath)}");
 			if (Schema.TryLoad((AbsoluteFilePath)schemaFilePath, out var schema) && schema is not null)
 			{
-				foreach (var schemaEnum in schema.Enums)
+				foreach (var schemaEnum in schema.GetEnums())
 				{
 					using (var code = CodeBlocker.Create())
 					{
@@ -57,7 +57,7 @@ public static class SchemaClassGenerator
 					}
 				}
 
-				foreach (var schemaClass in schema.Classes)
+				foreach (var schemaClass in schema.GetClasses())
 				{
 					using (var code = CodeBlocker.Create())
 					{
@@ -201,8 +201,8 @@ public static class SchemaClassGenerator
 		code.WriteLine(FileHeader);
 		code.WriteLine($"#include \"ColumnStack.gen.h\"");
 		var usedIncludes = new HashSet<string>();
-		schemaClass.Members.ForEach(m => GenerateEnumIncludes(m, code, usedIncludes));
-		schemaClass.Members.ForEach(m => GenerateContainerIncludes(m, code, usedIncludes));
+		schemaClass.GetMembers().ForEach(m => GenerateEnumIncludes(m, code, usedIncludes));
+		schemaClass.GetMembers().ForEach(m => GenerateContainerIncludes(m, code, usedIncludes));
 
 		code.NewLine();
 		code.WriteLine("#include <string>");
@@ -219,7 +219,7 @@ public static class SchemaClassGenerator
 			code.WriteLine("template<class T>");
 			code.WriteLine("using vector = std::vector<T>;");
 			var usedDecls = new HashSet<string>();
-			schemaClass.Members.ForEach(m => GenerateSchemaMemberFwdDecl(m, code, usedDecls));
+			schemaClass.GetMembers().ForEach(m => GenerateSchemaMemberFwdDecl(m, code, usedDecls));
 
 			code.NewLine();
 			code.WriteLine($"class {schemaClass.Name}");
@@ -237,7 +237,7 @@ public static class SchemaClassGenerator
 				code.WriteLine("void ImGui();");
 
 				code.NewLine();
-				schemaClass.Members.ForEach(m => GenerateSchemaMemberHeader(m, code));
+				schemaClass.GetMembers().ForEach(m => GenerateSchemaMemberHeader(m, code));
 			}
 		}
 	}
@@ -315,7 +315,7 @@ public static class SchemaClassGenerator
 		code.WriteLine($"#include \"{schemaClass.Name}.gen.h\"");
 
 		var usedIncludes = new HashSet<string>();
-		schemaClass.Members.ForEach(m => GenerateIncludes(m, code, usedIncludes));
+		schemaClass.GetMembers().ForEach(m => GenerateIncludes(m, code, usedIncludes));
 
 		code.NewLine();
 		code.WriteLine("#include <json/json.h>");
@@ -333,9 +333,9 @@ public static class SchemaClassGenerator
 		using (new Scope(code))
 		{
 			code.WriteLine($"bool equal = true");
-			schemaClass.Members.Where(m => !m.Type.IsComplexArray).ToList().ForEach(m => GenerateDeepEqualsMember(m, code));
+			schemaClass.GetMembers().Where(m => !m.Type.IsComplexArray).ToCollection().ForEach(m => GenerateDeepEqualsMember(m, code));
 			code.WriteLine($";");
-			schemaClass.Members.Where(m => m.Type.IsComplexArray).ToList().ForEach(m => GenerateDeepEqualsMember(m, code));
+			schemaClass.GetMembers().Where(m => m.Type.IsComplexArray).ToCollection().ForEach(m => GenerateDeepEqualsMember(m, code));
 			code.WriteLine($"return equal; ");
 		}
 
@@ -344,7 +344,7 @@ public static class SchemaClassGenerator
 		using (new Scope(code))
 		{
 			code.WriteLine($"auto newObj = new {schemaClass.Name}();");
-			schemaClass.Members.ForEach(m => GenerateDeepCopyMember(m, code));
+			schemaClass.GetMembers().ForEach(m => GenerateDeepCopyMember(m, code));
 			code.WriteLine($"return newObj;");
 		}
 
@@ -352,14 +352,14 @@ public static class SchemaClassGenerator
 		code.WriteLine($"void {schemaClass.Name}::Deserialize(Json::Value& jsonObj)");
 		using (new Scope(code))
 		{
-			schemaClass.Members.ForEach(m => GenerateDeserializeMember(m, code));
+			schemaClass.GetMembers().ForEach(m => GenerateDeserializeMember(m, code));
 		}
 
 		code.NewLine();
 		code.WriteLine($"void {schemaClass.Name}::Serialize(Json::Value& jsonObj) const");
 		using (new Scope(code))
 		{
-			schemaClass.Members.ForEach(m => GenerateSerializeMember(m, code));
+			schemaClass.GetMembers().ForEach(m => GenerateSerializeMember(m, code));
 		}
 
 		code.NewLine();
@@ -367,7 +367,7 @@ public static class SchemaClassGenerator
 		using (new Scope(code))
 		{
 			code.WriteLine($"auto instance = new {schemaClass.Name}();");
-			schemaClass.Members.ForEach(m => GenerateMakeMember(m, code));
+			schemaClass.GetMembers().ForEach(m => GenerateMakeMember(m, code));
 			code.WriteLine($"return instance;");
 
 		}
@@ -376,7 +376,7 @@ public static class SchemaClassGenerator
 		code.WriteLine($"void {schemaClass.Name}::Destroy()");
 		using (new Scope(code))
 		{
-			schemaClass.Members.ForEach(m => GenerateDestroyMember(m, code));
+			schemaClass.GetMembers().ForEach(m => GenerateDestroyMember(m, code));
 		}
 
 		code.NewLine();
@@ -384,9 +384,9 @@ public static class SchemaClassGenerator
 		using (new Scope(code))
 		{
 			code.WriteLine($"ColumnStack::Push(2, \"SchemaClasses:{schemaClass.Name}\");");
-			schemaClass.Members.Where(m => !m.Type.IsContainer && !m.Type.IsObject).ToList().ForEach(m => GenerateImGuiEditField(m, code));
+			schemaClass.GetMembers().Where(m => !m.Type.IsContainer && !m.Type.IsObject).ToCollection().ForEach(m => GenerateImGuiEditField(m, code));
 			code.WriteLine($"ColumnStack::Pop();");
-			schemaClass.Members.Where(m => m.Type.IsContainer || m.Type.IsObject).ToList().ForEach(m => GenerateImGuiEditField(m, code));
+			schemaClass.GetMembers().Where(m => m.Type.IsContainer || m.Type.IsObject).ToCollection().ForEach(m => GenerateImGuiEditField(m, code));
 		}
 	}
 
@@ -694,7 +694,7 @@ public static class SchemaClassGenerator
 				code.WriteLine($"enum class Type");
 				using (new Scope(code))
 				{
-					foreach (var enumValue in schemaEnum.Values)
+					foreach (var enumValue in schemaEnum.GetValues())
 					{
 						code.WriteLine($"{enumValue},");
 					}
@@ -755,7 +755,7 @@ public static class SchemaClassGenerator
 			code.WriteLine($"string {schemaEnum.Name}::ToString({schemaEnum.Name} value)");
 			using (new Scope(code))
 			{
-				foreach (var enumValue in schemaEnum.Values)
+				foreach (var enumValue in schemaEnum.GetValues())
 				{
 					code.WriteLine($"if(value.m_value == {schemaEnum.Name}::{enumValue}) return \"{enumValue}\";");
 				}
@@ -767,7 +767,7 @@ public static class SchemaClassGenerator
 			code.WriteLine($"string {schemaEnum.Name}::ToString(Type value)");
 			using (new Scope(code))
 			{
-				foreach (var enumValue in schemaEnum.Values)
+				foreach (var enumValue in schemaEnum.GetValues())
 				{
 					code.WriteLine($"if(value == {schemaEnum.Name}::{enumValue}) return \"{enumValue}\";");
 				}
@@ -779,7 +779,7 @@ public static class SchemaClassGenerator
 			code.WriteLine($"{schemaEnum.Name} {schemaEnum.Name}::FromString(const string& value)");
 			using (new Scope(code))
 			{
-				foreach (var enumValue in schemaEnum.Values)
+				foreach (var enumValue in schemaEnum.GetValues())
 				{
 					code.WriteLine($"if(value == \"{enumValue}\") return {schemaEnum.Name}::{enumValue};");
 				}
@@ -793,8 +793,8 @@ public static class SchemaClassGenerator
 			{
 				code.WriteLine($"static vector<{schemaEnum.Name}> list;");
 				code.WriteLine("if(!list.empty()) { return list; }");
-				code.WriteLine($"list.reserve({schemaEnum.Values.Count});");
-				foreach (var enumValue in schemaEnum.Values)
+				code.WriteLine($"list.reserve({schemaEnum.GetValues().Count});");
+				foreach (var enumValue in schemaEnum.GetValues())
 				{
 					code.WriteLine($"list.push_back({schemaEnum.Name}::{enumValue});");
 				}
@@ -808,8 +808,8 @@ public static class SchemaClassGenerator
 			{
 				code.WriteLine("static vector<string> list;");
 				code.WriteLine("if(!list.empty()) { return list; }");
-				code.WriteLine($"list.reserve({schemaEnum.Values.Count});");
-				foreach (var enumValue in schemaEnum.Values)
+				code.WriteLine($"list.reserve({schemaEnum.GetValues().Count});");
+				foreach (var enumValue in schemaEnum.GetValues())
 				{
 					code.WriteLine($"list.push_back(\"{enumValue}\");");
 				}

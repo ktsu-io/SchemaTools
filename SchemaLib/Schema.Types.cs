@@ -71,8 +71,8 @@ public partial class Schema
 		public class ColorRGB : Vector3 { }
 		public class ColorRGBA : Vector4 { }
 
-		public static HashSet<Type> BuiltIn => new()
-		{
+		public static HashSet<Type> BuiltIn =>
+		[
 			typeof(Int),
 			typeof(Long),
 			typeof(Float),
@@ -88,10 +88,10 @@ public partial class Schema
 			typeof(Vector4),
 			typeof(ColorRGB),
 			typeof(ColorRGBA),
-		};
+		];
 
-		public static HashSet<Type> Primitives => new()
-		{
+		public static HashSet<Type> Primitives =>
+		[
 			typeof(Int),
 			typeof(Long),
 			typeof(Float),
@@ -100,7 +100,7 @@ public partial class Schema
 			typeof(DateTime),
 			typeof(TimeSpan),
 			typeof(Bool),
-		};
+		];
 
 		public static Dictionary<Type, Type> SystemTypes => new()
 		{

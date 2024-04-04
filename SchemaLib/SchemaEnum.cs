@@ -7,24 +7,23 @@ using System.Text.Json.Serialization;
 
 public class SchemaEnum : SchemaChild<EnumName>
 {
-	[JsonPropertyName("Values")]
-	private Collection<EnumValueName> ValueCollection { get; set; } = new();
-	[JsonIgnore]
-	public IReadOnlyCollection<EnumValueName> Values => ValueCollection;
+	[JsonInclude]
+	private Collection<EnumValueName> Values { get; set; } = [];
+	public IReadOnlyCollection<EnumValueName> GetValues() => Values;
 
 	public bool TryAddValue(EnumValueName enumValueName)
 	{
 		ArgumentException.ThrowIfNullOrEmpty(enumValueName, nameof(enumValueName));
-		if (!ValueCollection.Any(v => v == enumValueName))
+		if (!Values.Any(v => v == enumValueName))
 		{
-			ValueCollection.Add(enumValueName);
+			Values.Add(enumValueName);
 			return true;
 		}
 
 		return false;
 	}
 
-	public bool TryRemoveValue(EnumValueName enumValueName) => ValueCollection.Remove(enumValueName);
+	public bool TryRemoveValue(EnumValueName enumValueName) => Values.Remove(enumValueName);
 
 	public bool TryRemove() => ParentSchema?.TryRemoveEnum(this) ?? false;
 }

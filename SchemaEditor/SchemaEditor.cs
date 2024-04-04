@@ -116,8 +116,8 @@ public class SchemaEditor
 
 	private void ShowLeftPanel(float dt)
 	{
-		ShowCollapsiblePanel($"Enums ({CurrentSchema?.Enums.Count ?? 0})", ShowEnums);
-		ShowCollapsiblePanel($"Classes ({CurrentSchema?.Classes.Count ?? 0})", ShowClasses);
+		ShowCollapsiblePanel($"Enums ({CurrentSchema?.GetEnums().Count ?? 0})", ShowEnums);
+		ShowCollapsiblePanel($"Classes ({CurrentSchema?.GetClasses().Count ?? 0})", ShowClasses);
 	}
 
 	private void ShowRightPanel(float dt)
@@ -290,7 +290,7 @@ public class SchemaEditor
 			ImGui.Indent();
 			ShowNewEnum();
 			ImGui.NewLine();
-			foreach (var schemaEnum in CurrentSchema.Enums.OrderBy(e => e.Name).ToList())
+			foreach (var schemaEnum in CurrentSchema.GetEnums().OrderBy(e => e.Name).ToCollection())
 			{
 				string enumName = schemaEnum.Name;
 				if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
@@ -314,7 +314,7 @@ public class SchemaEditor
 				}
 
 				ImGui.Indent();
-				foreach (var enumValueName in schemaEnum.Values.ToList())
+				foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
 				{
 					string enumValue = enumValueName;
 					if (ImGui.Button($"X##deleteEnumValue{enumName}{enumValue}", new Vector2(ImGui.GetFrameHeight(), 0)))
@@ -342,7 +342,7 @@ public class SchemaEditor
 			ImGui.Indent();
 			ShowNewClass();
 			ImGui.NewLine();
-			foreach (var schemaClass in CurrentSchema.Classes.OrderBy(c => c.Name).ToList())
+			foreach (var schemaClass in CurrentSchema.GetClasses().OrderBy(c => c.Name).ToCollection())
 			{
 				if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
 				{
@@ -383,7 +383,7 @@ public class SchemaEditor
 			}
 
 			ImGui.Separator();
-			foreach (var schemaClass in schema.Classes.OrderBy(c => c.Name))
+			foreach (var schemaClass in schema.GetClasses().OrderBy(c => c.Name))
 			{
 				if (ImGui.Selectable(schemaClass.Name))
 				{
@@ -395,9 +395,9 @@ public class SchemaEditor
 			}
 
 			ImGui.Separator();
-			if (ImGui.BeginMenu(nameof(Schema.Types.Enum), schema.Enums.Count != 0))
+			if (ImGui.BeginMenu(nameof(Schema.Types.Enum), schema.GetEnums().Count != 0))
 			{
-				foreach (var schemaEnum in schema.Enums.OrderBy(e => e.Name))
+				foreach (var schemaEnum in schema.GetEnums().OrderBy(e => e.Name))
 				{
 					if (ImGui.Selectable(schemaEnum.Name))
 					{
@@ -430,7 +430,7 @@ public class SchemaEditor
 				}
 
 				ImGui.Separator();
-				foreach (var schemaClass in schema.Classes)
+				foreach (var schemaClass in schema.GetClasses())
 				{
 					if (ImGui.Selectable(schemaClass.Name))
 					{
@@ -469,7 +469,7 @@ public class SchemaEditor
 						array.Key = new();
 					}
 
-					foreach (var primitiveMember in obj.Class.Members.Where(m => m.Type.IsPrimitive).OrderBy(m => m.Name))
+					foreach (var primitiveMember in obj.Class.GetMembers().Where(m => m.Type.IsPrimitive).OrderBy(m => m.Name))
 					{
 						if (ImGui.Selectable(primitiveMember.Name))
 						{
@@ -511,7 +511,7 @@ public class SchemaEditor
 
 				ShowMemberHeadings();
 
-				foreach (var schemaMember in CurrentClass.Members.ToList())
+				foreach (var schemaMember in CurrentClass.GetMembers().ToCollection())
 				{
 					string name = schemaMember.Name;
 					if (ImGui.Button($"X##deleteMember{name}", new Vector2(frameHeight, 0)))
