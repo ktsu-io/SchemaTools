@@ -13,6 +13,7 @@ using ktsu.io.StrongPaths;
 
 public class SchemaEditor
 {
+	public static SchemaEditor Instance { get; } = new();
 	internal Schema? CurrentSchema { get; set; }
 	internal SchemaClass? CurrentClass { get; set; }
 	internal SchemaEditorOptions Options { get; } = new();
@@ -20,40 +21,56 @@ public class SchemaEditor
 	private DateTime LastSaveOptionsTime { get; set; } = DateTime.MinValue;
 	private DateTime SaveOptionsQueuedTime { get; set; } = DateTime.MinValue;
 	private TimeSpan SaveOptionsDebounceTime { get; } = TimeSpan.FromSeconds(3);
-	private DividerContainer DividerContainerCols { get; }
+	private DividerContainer DividerContainerCols { get; init; }
+
+	private ImGuiAppWindowState InitialWindowState { get; init; }
 	private Popups Popups { get; } = new();
 
-	[STAThread]
 	private static void Main(string[] _)
 	{
-		SchemaEditor schemaEditor = new();
 		string title = nameof(SchemaEditor);
-		if (schemaEditor.CurrentSchema != null)
+		if (Instance.CurrentSchema is not null)
 		{
-			title += $" - {schemaEditor.CurrentSchema.FilePath.FileName}";
+			title += $" - {Instance.CurrentSchema.FilePath.FileName}";
 		}
 
-		ImGuiApp.Start(title, schemaEditor.Options.WindowState, schemaEditor.OnStart, schemaEditor.OnTick, schemaEditor.OnMenu, schemaEditor.OnWindowResized);
+		ImGuiApp.Start(title, Instance.InitialWindowState, Instance.OnStart, Instance.OnTick, Instance.OnMenu, Instance.OnWindowResized);
 	}
 
 	public SchemaEditor()
 	{
-		DividerContainerCols = new("RootDivider", DividerResized);
+		DividerContainerCols =
+			new(
+				"RootDivider",
+				DividerResized,
+				DividerLayout.Columns,
+				[
+					new("Left", 0.25f, ShowLeftPanel),
+					new("Right", 0.75f, ShowRightPanel),
+				]
+			);
+
 		Options = SchemaEditorOptions.LoadOrCreate();
 		Popups = Options.Popups;
-		DividerContainerCols.Add("Left", 0.25f, ShowLeftPanel);
-		DividerContainerCols.Add("Right", 0.75f, ShowRightPanel);
-		RestoreOptions();
+		InitialWindowState = Options.WindowState;
+
+		// restore open schema
+		if (Schema.TryLoad(Options.CurrentSchemaPath, out var previouslyOpenSchema) && previouslyOpenSchema is not null)
+		{
+			CurrentSchema = previouslyOpenSchema;
+			CurrentClass = null;
+			CurrentClass = CurrentSchema.GetClass(Options.CurrentClassName);
+		}
+
+		// restore divider states
+		if (Options.DividerStates.TryGetValue(DividerContainerCols.Id, out var sizes))
+		{
+			DividerContainerCols.SetSizesFromList(sizes);
+		}
 	}
 
 	private void OnStart()
 	{
-	}
-
-	private void RestoreOptions()
-	{
-		RestoreOpenSchema();
-		RestoreDividerStates();
 	}
 
 	private void OnWindowResized() => QueueSaveOptions();
@@ -64,17 +81,14 @@ public class SchemaEditor
 		QueueSaveOptions();
 	}
 
-	private void RestoreDividerStates()
-	{
-		if (Options.DividerStates.TryGetValue(DividerContainerCols.Id, out var sizes))
-		{
-			DividerContainerCols.SetSizesFromList(sizes);
-		}
-	}
 
 	//Dont call this directly, call QueueSaveOptions instead so that we can debounce the saves and avoid saving multiple times per frame or multiple frames in a row
 	private void SaveOptionsInternal()
 	{
+		Options.CurrentSchemaPath = CurrentSchema?.FilePath ?? new();
+		Options.CurrentClassName = CurrentClass?.Name ?? new();
+		Options.DividerStates[DividerContainerCols.Id] = DividerContainerCols.GetSizes();
+		Options.WindowState = ImGuiApp.WindowState;
 		Options.Popups = Popups;
 		Options.Save();
 	}
@@ -125,30 +139,6 @@ public class SchemaEditor
 		CurrentClass = null;
 	}
 
-	private void RestoreOpenSchema()
-	{
-		if (string.IsNullOrEmpty(Options.CurrentSchemaPath))
-		{
-			return;
-		}
-
-		if (Schema.TryLoad(Options.CurrentSchemaPath, out var previouslyOpenSchema) && previouslyOpenSchema != null)
-		{
-			CurrentSchema = previouslyOpenSchema;
-			CurrentClass = null;
-
-			if (string.IsNullOrEmpty(Options.CurrentClassName))
-			{
-				return;
-			}
-
-			if (CurrentSchema.TryGetClass(Options.CurrentClassName, out var previouslyOpenClass))
-			{
-				CurrentClass = previouslyOpenClass;
-			}
-		}
-	}
-
 	private void OnMenu()
 	{
 		// Use the JobQueue to avoid calling popup functions from within the menu
@@ -196,7 +186,7 @@ public class SchemaEditor
 		Popups.OpenBrowserFileOpen("Open Schema", (filePath) =>
 		{
 			Reset();
-			if (Schema.TryLoad(filePath, out var schema) && schema != null)
+			if (Schema.TryLoad(filePath, out var schema) && schema is not null)
 			{
 				CurrentSchema = schema;
 				CurrentClass = CurrentSchema?.GetFirstClass();
@@ -232,7 +222,7 @@ public class SchemaEditor
 
 	private void ShowNewEnum()
 	{
-		if (CurrentSchema != null)
+		if (CurrentSchema is not null)
 		{
 			if (ImGui.Button("Add Enum", new Vector2(FieldWidth, 0)))
 			{
@@ -253,7 +243,7 @@ public class SchemaEditor
 
 	private void ShowNewClass()
 	{
-		if (CurrentSchema != null)
+		if (CurrentSchema is not null)
 		{
 			if (ImGui.Button("Add Class", new Vector2(FieldWidth, 0)))
 			{
@@ -275,7 +265,7 @@ public class SchemaEditor
 
 	private void ShowNewMember()
 	{
-		if (CurrentClass != null)
+		if (CurrentClass is not null)
 		{
 			if (ImGui.Button("Add Member", new Vector2(FieldWidth, 0)))
 			{
@@ -296,7 +286,7 @@ public class SchemaEditor
 
 	private void ShowEnums()
 	{
-		if (CurrentSchema != null)
+		if (CurrentSchema is not null)
 		{
 			ImGui.Indent();
 			ShowNewEnum();
@@ -348,7 +338,7 @@ public class SchemaEditor
 
 	private void ShowClasses()
 	{
-		if (CurrentSchema != null)
+		if (CurrentSchema is not null)
 		{
 			ImGui.Indent();
 			ShowNewClass();
@@ -509,7 +499,7 @@ public class SchemaEditor
 
 	private void ShowMembers()
 	{
-		if (CurrentClass != null)
+		if (CurrentClass is not null)
 		{
 			if (ImGui.CollapsingHeader($"{CurrentClass.Name} Members", ImGuiTreeNodeFlags.DefaultOpen))
 			{
@@ -534,7 +524,7 @@ public class SchemaEditor
 					ImGui.SetNextItemWidth(FieldWidth);
 					ImGui.InputText($"##{name}", ref name, 64, ImGuiInputTextFlags.ReadOnly);
 					ImGui.SameLine();
-					if (CurrentSchema != null)
+					if (CurrentSchema is not null)
 					{
 						ShowMemberConfig(CurrentSchema, schemaMember);
 					}
