@@ -287,22 +287,11 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			ImGui.Indent();
 			ShowNewEnum();
 			ImGui.NewLine();
 			foreach (var schemaEnum in CurrentSchema.GetEnums().OrderBy(e => e.Name).ToCollection())
 			{
-				string enumName = schemaEnum.Name;
-				if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
-				{
-					schemaEnum.TryRemove();
-				}
-
-				ImGui.SameLine();
-				ImGui.SetNextItemWidth(FieldWidth);
-				ImGui.InputText($"##Enum{enumName}", ref enumName, 64, ImGuiInputTextFlags.ReadOnly);
-				ImGui.SameLine();
-				if (ImGui.Button($"+##addEnumValue{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+				if (ImGui.Button($"+##addEnumValue{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
 				{
 					Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
 					{
@@ -313,25 +302,42 @@ public class SchemaEditor
 					});
 				}
 
-				ImGui.Indent();
-				foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
+				ImGui.SameLine();
+				using (Style.Button.Alignment.Left())
 				{
-					string enumValue = enumValueName;
-					if (ImGui.Button($"X##deleteEnumValue{enumName}{enumValue}", new Vector2(ImGui.GetFrameHeight(), 0)))
-					{
-						schemaEnum.TryRemoveValue(enumValueName);
-					}
-
-					ImGui.SameLine();
-					ImGui.SetNextItemWidth(FieldWidth);
-					ImGui.InputText($"##Enum{enumValue}", ref enumValue, 64, ImGuiInputTextFlags.ReadOnly);
+					ImGui.Button($"{schemaEnum.Name}##EnumName{schemaEnum.Name}", new(FieldWidth, 0));
 				}
 
-				ImGui.NewLine();
-				ImGui.Unindent();
-			}
+				ImGui.SameLine();
+				if (ImGui.Button($"X##deleteEnum{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
+				{
+					schemaEnum.TryRemove();
+				}
 
-			ImGui.Unindent();
+				using (Style.Indent.ByFrameHeightAndXSpacing())
+				{
+					bool first = true;
+					foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
+					{
+						using (Style.Indent.WithTreeLines(first))
+						{
+							first = false;
+							using (Style.Button.Alignment.Left())
+							{
+								ImGui.Button($"{enumValueName}##EnumValue{enumValueName}", new(FieldWidth, 0));
+							}
+
+							ImGui.SameLine();
+							if (ImGui.Button($"X##deleteEnumValue{schemaEnum.Name}{enumValueName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+							{
+								schemaEnum.TryRemoveValue(enumValueName);
+							}
+						}
+					}
+
+					ImGui.NewLine();
+				}
+			}
 		}
 	}
 

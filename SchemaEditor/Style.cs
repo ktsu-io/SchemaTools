@@ -53,12 +53,64 @@ internal static class Style
 	}
 
 	public class ScopedColor(ImGuiCol target, ImColor color) : ScopedAction(
-			onOpen: () =>
-			{
-				ImGui.PushStyleColor(target, color.Value);
-			},
+			onOpen: () => ImGui.PushStyleColor(target, color.Value),
 			onClose: ImGui.PopStyleColor)
 	{ }
+
+	public class ScopedButtonAlignment(Vector2 vector) : ScopedAction(
+			onOpen: () => ImGui.PushStyleVar(ImGuiStyleVar.ButtonTextAlign, vector),
+			onClose: ImGui.PopStyleVar)
+	{ }
+
+	public class ScopedIndent(float width) : ScopedAction(
+			onOpen: () => ImGui.Indent(width),
+			onClose: () => ImGui.Unindent(width))
+	{ }
+	public class ScopedIndentWithTreeLines(float width, bool isFirstItem) : ScopedAction(
+			onOpen: () =>
+			{
+				ImGui.Indent(width);
+				var cursor = ImGui.GetCursorScreenPos();
+				float minusHalfWidth = -width / 2f;
+				float halfFrameHeight = ImGui.GetFrameHeight() / 2f;
+				float halfThickness = Thickness / 2f;
+				float itemSpacingY = ImGui.GetStyle().ItemSpacing.Y;
+				float left = minusHalfWidth;
+				float right = 0;
+				float top = isFirstItem ? -itemSpacingY : -itemSpacingY - halfFrameHeight;
+				float bottom = halfFrameHeight;
+				ImGui.GetWindowDrawList().AddLine(
+					cursor + new Vector2(left, top),
+					cursor + new Vector2(left, bottom + halfThickness),
+					ImGui.GetColorU32(Color.Gray.Value), Thickness);
+
+				ImGui.GetWindowDrawList().AddLine(
+					cursor + new Vector2(left - halfThickness, bottom),
+					cursor + new Vector2(right, bottom),
+					ImGui.GetColorU32(Color.Gray.Value), Thickness);
+			},
+			onClose: () => ImGui.Unindent(width))
+	{
+		private const float Thickness = 2f;
+	}
+
+	public static class Indent
+	{
+		public static ScopedIndent By(float width) => new(width);
+		public static ScopedIndent ByFrameHeightAndXSpacing() => new(ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X);
+		public static ScopedIndent Default() => new(ImGui.GetStyle().IndentSpacing);
+		public static ScopedIndentWithTreeLines WithTreeLines(bool isFirstItem) => new(ImGui.GetStyle().IndentSpacing, isFirstItem);
+		public static ScopedIndentWithTreeLines WithTreeLinesBy(float width, bool isFirstItem) => new(width, isFirstItem);
+	}
+
+	public static class Button
+	{
+		public static class Alignment
+		{
+			public static ScopedButtonAlignment Left() => new(new(0f, 0.5f));
+			public static ScopedButtonAlignment Center() => new(new(0.5f, 0.5f));
+		}
+	}
 
 	public static class Text
 	{
