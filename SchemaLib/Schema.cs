@@ -55,7 +55,7 @@ public partial class Schema
 			try
 			{
 				schema = JsonSerializer.Deserialize<Schema>(File.ReadAllBytes(filePath), JsonSerializerOptions);
-				if (schema != null)
+				if (schema is not null)
 				{
 					schema.FilePath = filePath;
 					//TODO: walk every class and tell each member which class they belong to
@@ -71,7 +71,7 @@ public partial class Schema
 			}
 		}
 
-		return schema != null;
+		return schema is not null;
 	}
 
 	public static void EnsureDirectoryExists(string path)
@@ -118,17 +118,34 @@ public partial class Schema
 	public static void RemoveEnum(SchemaEnum schemaEnum) => RemoveChild(schemaEnum, schemaEnum?.ParentSchema?.Enums ?? throw new InvalidOperationException("Cannot remove an enum that is not assosciated with a schema"));
 	public static void RemoveClass(SchemaClass schemaClass) => RemoveChild(schemaClass, schemaClass?.ParentSchema?.Classes ?? throw new InvalidOperationException("Cannot remove a class that is not assosciated with a schema"));
 
+	public static TChild? GetChild<TName, TChild>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
+	{
+		ArgumentNullException.ThrowIfNull(name);
+		ArgumentNullException.ThrowIfNull(collection);
+
+		return collection.FirstOrDefault(c => c.Name == name);
+	}
+
 	public static bool TryGetChild<TName, TChild>(TName name, Collection<TChild> collection, out TChild? child) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
 		ArgumentNullException.ThrowIfNull(name);
 		ArgumentNullException.ThrowIfNull(collection);
 
+		child = null;
+		if (name.IsEmpty())
+		{
+			return false;
+		}
+
 		child = collection.FirstOrDefault(c => c.Name == name);
-		return child != null;
+		return child is not null;
 	}
 
 	public bool TryGetEnum(EnumName name, out SchemaEnum? schemaEnum) => TryGetChild(name, Enums, out schemaEnum);
 	public bool TryGetClass(ClassName name, out SchemaClass? schemaClass) => TryGetChild(name, Classes, out schemaClass);
+
+	public SchemaEnum? GetEnum(EnumName name) => GetChild(name, Enums);
+	public SchemaClass? GetClass(ClassName name) => GetChild(name, Classes);
 
 
 	public TChild? AddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
