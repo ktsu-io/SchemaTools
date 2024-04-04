@@ -23,12 +23,16 @@ public partial class Schema
 	public AbsoluteDirectoryPath DataSourcePath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;
 	#endregion
 
-	#region Serializable Properties
-	[JsonInclude]
-	public Collection<SchemaClass> Classes { get; init; } = new();
+	#region SchemaChildren
+	[JsonPropertyName("Classes")]
+	private Collection<SchemaClass> ClassCollection { get; set; } = [];
+	[JsonIgnore]
+	public IReadOnlyCollection<SchemaClass> Classes => ClassCollection;
 
-	[JsonInclude]
-	public Collection<SchemaEnum> Enums { get; init; } = new();
+	[JsonPropertyName("Enums")]
+	private Collection<SchemaEnum> EnumCollection { get; set; } = [];
+	[JsonIgnore]
+	public IReadOnlyCollection<SchemaEnum> Enums => EnumCollection;
 
 	#endregion
 
@@ -58,7 +62,9 @@ public partial class Schema
 				if (schema is not null)
 				{
 					schema.FilePath = filePath;
-					//TODO: walk every class and tell each member which class they belong to
+
+					// Walk every class and tell each member which class they belong to
+					schema.Reassosciate();
 				}
 			}
 			catch (FileNotFoundException)
@@ -72,6 +78,24 @@ public partial class Schema
 		}
 
 		return schema is not null;
+	}
+
+	private void Reassosciate()
+	{
+		foreach (var schemaClass in Classes)
+		{
+			schemaClass.AssosciateWith(this);
+			foreach (var member in schemaClass.Members)
+			{
+				member.AssosciateWith(schemaClass);
+				member.Type.AssosciateWith(member);
+			}
+		}
+
+		foreach (var schemaEnum in Enums)
+		{
+			schemaEnum.AssosciateWith(this);
+		}
 	}
 
 	public static void EnsureDirectoryExists(string path)
@@ -107,16 +131,16 @@ public partial class Schema
 
 	public void ChangeFilePath(AbsoluteFilePath newFilePath) => FilePath = newFilePath;
 
-	public static void RemoveChild<TChild>(TChild child, Collection<TChild> collection)
+	public static bool TryRemoveChild<TChild>(TChild child, Collection<TChild> collection)
 	{
 		ArgumentNullException.ThrowIfNull(child);
 		ArgumentNullException.ThrowIfNull(collection);
 
-		collection.Remove(child);
+		return collection.Remove(child);
 	}
 
-	public static void RemoveEnum(SchemaEnum schemaEnum) => RemoveChild(schemaEnum, schemaEnum?.ParentSchema?.Enums ?? throw new InvalidOperationException("Cannot remove an enum that is not assosciated with a schema"));
-	public static void RemoveClass(SchemaClass schemaClass) => RemoveChild(schemaClass, schemaClass?.ParentSchema?.Classes ?? throw new InvalidOperationException("Cannot remove a class that is not assosciated with a schema"));
+	public bool TryRemoveEnum(SchemaEnum schemaEnum) => schemaEnum?.ParentSchema?.EnumCollection.Remove(schemaEnum) ?? false;
+	public bool TryRemoveClass(SchemaClass schemaClass) => schemaClass?.ParentSchema?.ClassCollection.Remove(schemaClass) ?? false;
 
 	public static TChild? GetChild<TName, TChild>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
@@ -141,11 +165,11 @@ public partial class Schema
 		return child is not null;
 	}
 
-	public bool TryGetEnum(EnumName name, out SchemaEnum? schemaEnum) => TryGetChild(name, Enums, out schemaEnum);
-	public bool TryGetClass(ClassName name, out SchemaClass? schemaClass) => TryGetChild(name, Classes, out schemaClass);
+	public bool TryGetEnum(EnumName name, out SchemaEnum? schemaEnum) => TryGetChild(name, EnumCollection, out schemaEnum);
+	public bool TryGetClass(ClassName name, out SchemaClass? schemaClass) => TryGetChild(name, ClassCollection, out schemaClass);
 
-	public SchemaEnum? GetEnum(EnumName name) => GetChild(name, Enums);
-	public SchemaClass? GetClass(ClassName name) => GetChild(name, Classes);
+	public SchemaEnum? GetEnum(EnumName name) => GetChild(name, EnumCollection);
+	public SchemaClass? GetClass(ClassName name) => GetChild(name, ClassCollection);
 
 
 	public TChild? AddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
@@ -169,10 +193,10 @@ public partial class Schema
 	public bool TryAddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new() =>
 		AddChild(name, collection) is not null;
 
-	public bool TryAddEnum(EnumName name) => TryAddChild(name, Enums);
-	public bool TryAddClass(ClassName name) => TryAddChild(name, Classes);
-	public SchemaEnum? AddEnum(EnumName name) => AddChild(name, Enums);
-	public SchemaClass? AddClass(ClassName name) => AddChild(name, Classes);
+	public bool TryAddEnum(EnumName name) => TryAddChild(name, EnumCollection);
+	public bool TryAddClass(ClassName name) => TryAddChild(name, ClassCollection);
+	public SchemaEnum? AddEnum(EnumName name) => AddChild(name, EnumCollection);
+	public SchemaClass? AddClass(ClassName name) => AddChild(name, ClassCollection);
 
 	public bool TryAddClass(Type type) => AddClass(type) is not null;
 
@@ -203,7 +227,7 @@ public partial class Schema
 				}
 			}
 
-			Classes.Add(newClass);
+			ClassCollection.Add(newClass);
 
 			return newClass;
 		}

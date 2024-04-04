@@ -128,7 +128,7 @@ public class SchemaEditor
 
 	private static void ShowCollapsiblePanel(string name, Action contentDelegate)
 	{
-		if (ImGui.CollapsingHeader(name))
+		if (ImGui.CollapsingHeader(name, ImGuiTreeNodeFlags.DefaultOpen))
 		{
 			contentDelegate?.Invoke();
 		}
@@ -141,7 +141,6 @@ public class SchemaEditor
 
 	private void OnMenu()
 	{
-		// Use the JobQueue to avoid calling popup functions from within the menu
 		if (ImGui.BeginMenu("File"))
 		{
 			if (ImGui.MenuItem("New"))
@@ -296,7 +295,7 @@ public class SchemaEditor
 				string enumName = schemaEnum.Name;
 				if (ImGui.Button($"X##deleteEnum{enumName}", new Vector2(ImGui.GetFrameHeight(), 0)))
 				{
-					CurrentSchema.Enums.Remove(schemaEnum);
+					schemaEnum.TryRemove();
 				}
 
 				ImGui.SameLine();
@@ -320,7 +319,7 @@ public class SchemaEditor
 					string enumValue = enumValueName;
 					if (ImGui.Button($"X##deleteEnumValue{enumName}{enumValue}", new Vector2(ImGui.GetFrameHeight(), 0)))
 					{
-						schemaEnum.RemoveValue(enumValueName);
+						schemaEnum.TryRemoveValue(enumValueName);
 					}
 
 					ImGui.SameLine();
@@ -347,7 +346,7 @@ public class SchemaEditor
 			{
 				if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
 				{
-					CurrentSchema.Classes.Remove(schemaClass);
+					schemaClass.TryRemove();
 				}
 
 				ImGui.SameLine();
@@ -517,7 +516,7 @@ public class SchemaEditor
 					string name = schemaMember.Name;
 					if (ImGui.Button($"X##deleteMember{name}", new Vector2(frameHeight, 0)))
 					{
-						CurrentClass.RemoveMember(schemaMember);
+						schemaMember.TryRemove();
 					}
 
 					ImGui.SameLine();

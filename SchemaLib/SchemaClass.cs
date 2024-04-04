@@ -8,15 +8,17 @@ using System.Text.Json.Serialization;
 public class SchemaClass : SchemaChild<ClassName>
 {
 	[JsonPropertyName("Members")]
-	private Collection<SchemaMember> MemberList { get; set; } = new();
+	private Collection<SchemaMember> MemberCollection { get; set; } = new();
+	[JsonIgnore]
+	public IReadOnlyCollection<SchemaMember> Members => MemberCollection;
 
-	public IReadOnlyList<SchemaMember> Members => MemberList;
-
-	public SchemaMember? AddMember(MemberName memberName) => ParentSchema?.AddChild(memberName, MemberList) ?? throw new NotSupportedException("SchemaClass must be associated with a Schema before adding members");
+	public SchemaMember? AddMember(MemberName memberName) => ParentSchema?.AddChild(memberName, MemberCollection) ?? throw new NotSupportedException("SchemaClass must be associated with a Schema before adding members");
 	public bool TryAddMember(MemberName memberName) => AddMember(memberName) is not null;
 
 
-	public bool TryGetMember(MemberName memberName, out SchemaMember? schemaMember) => Schema.TryGetChild(memberName, MemberList, out schemaMember);
+	public bool TryGetMember(MemberName memberName, out SchemaMember? schemaMember) => Schema.TryGetChild(memberName, MemberCollection, out schemaMember);
 
-	public void RemoveMember(SchemaMember schemaMember) => Schema.RemoveChild(schemaMember, MemberList);
+	public bool TryRemoveMember(SchemaMember schemaMember) => Schema.TryRemoveChild(schemaMember, MemberCollection);
+
+	public bool TryRemove() => ParentSchema?.TryRemoveClass(this) ?? false;
 }

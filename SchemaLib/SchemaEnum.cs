@@ -2,25 +2,29 @@
 
 namespace ktsu.io.SchemaTools;
 
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 public class SchemaEnum : SchemaChild<EnumName>
 {
 	[JsonPropertyName("Values")]
-	private List<EnumValueName> ValueList { get; init; } = new();
+	private Collection<EnumValueName> ValueCollection { get; set; } = new();
+	[JsonIgnore]
+	public IReadOnlyCollection<EnumValueName> Values => ValueCollection;
 
 	public bool TryAddValue(EnumValueName enumValueName)
 	{
-		if (!string.IsNullOrEmpty(enumValueName) && !ValueList.Any(v => v == enumValueName))
+		ArgumentException.ThrowIfNullOrEmpty(enumValueName, nameof(enumValueName));
+		if (!ValueCollection.Any(v => v == enumValueName))
 		{
-			ValueList.Add(enumValueName);
+			ValueCollection.Add(enumValueName);
 			return true;
 		}
 
 		return false;
 	}
 
-	public void RemoveValue(EnumValueName enumValueName) => ValueList.Remove(enumValueName);
+	public bool TryRemoveValue(EnumValueName enumValueName) => ValueCollection.Remove(enumValueName);
 
-	public IReadOnlyList<EnumValueName> Values => ValueList;
+	public bool TryRemove() => ParentSchema?.TryRemoveEnum(this) ?? false;
 }

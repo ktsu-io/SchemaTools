@@ -15,6 +15,8 @@ public class SchemaMember : SchemaClassChild<MemberName>
 		Type = type;
 		Type.AssosciateWith(this);
 	}
+
+	public bool TryRemove() => ParentClass?.TryRemoveMember(this) ?? false;
 }
 
 public class RootSchemaMember : SchemaMember
