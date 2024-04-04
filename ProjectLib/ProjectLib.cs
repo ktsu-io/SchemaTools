@@ -35,7 +35,7 @@ public class ProjectLib
 
 	private void PurgeCSFilesInternal(XmlNode? node, Func<string?, bool> predicate)
 	{
-		if (node != null && predicate != null)
+		if (node is not null && predicate is not null)
 		{
 			var nodesToRemove = new List<XmlNode>();
 			foreach (XmlNode childNode in node.ChildNodes)
@@ -64,15 +64,15 @@ public class ProjectLib
 
 	private void PurgeCPPFilesInternal(XmlNode? node, Func<string, bool> predicate)
 	{
-		if (node != null && predicate != null)
+		if (node is not null && predicate is not null)
 		{
 			var nodesToRemove = new List<XmlNode>();
 			foreach (XmlNode childNode in node.ChildNodes)
 			{
-				if (childNode.Attributes != null)
+				if (childNode.Attributes is not null)
 				{
 					var includeAttribute = childNode.Attributes[Include];
-					if ((childNode.Name == ClInclude || childNode.Name == ClCompile) && includeAttribute != null && predicate(includeAttribute.Value))
+					if ((childNode.Name == ClInclude || childNode.Name == ClCompile) && includeAttribute is not null && predicate(includeAttribute.Value))
 					{
 						nodesToRemove.Add(childNode);
 					}
@@ -85,7 +85,7 @@ public class ProjectLib
 				Console.WriteLine($"Removing: {Path.GetFileName(filePath)} from {Path.GetFileName(ProjectPath)}");
 				node.RemoveChild(childNode);
 				string? dirName = Path.GetDirectoryName(ProjectPath);
-				if (dirName != null && filePath != null)
+				if (dirName is not null && filePath is not null)
 				{
 					File.Delete(Path.Combine(dirName, filePath));
 				}
@@ -115,14 +115,14 @@ public class ProjectLib
 
 	private static void AddCSFileInternal(XmlNode? node, string filePath)
 	{
-		if (node != null)
+		if (node is not null)
 		{
 			foreach (XmlNode childNode in node.ChildNodes)
 			{
 				if (childNode.Name == Compile && !(childNode.Attributes?[Include]?.Value.StartsWith(Properties, StringComparison.Ordinal) ?? false))
 				{
 					var newNode = childNode.OwnerDocument?.CreateElement(Compile);
-					if (newNode != null)
+					if (newNode is not null)
 					{
 						newNode.SetAttribute(Include, filePath);
 						node.AppendChild(newNode);
@@ -148,7 +148,7 @@ public class ProjectLib
 
 	private static void AddCPPFileInternal(XmlNode? node, string filePath)
 	{
-		if (node != null)
+		if (node is not null)
 		{
 			if (node.Name == ProjectKey)
 			{
@@ -164,7 +164,7 @@ public class ProjectLib
 				if (lastItemGroup is null)
 				{
 					lastItemGroup = node.OwnerDocument?.CreateElement(ItemGroup);
-					if (lastItemGroup != null)
+					if (lastItemGroup is not null)
 					{
 						node.AppendChild(lastItemGroup);
 					}
@@ -178,7 +178,7 @@ public class ProjectLib
 
 				var doc = node.OwnerDocument;
 				var newNode = doc?.CreateElement(nodeType);
-				if (newNode != null)
+				if (newNode is not null)
 				{
 					newNode.RemoveAllAttributes();
 					newNode.SetAttribute(Include, filePath);

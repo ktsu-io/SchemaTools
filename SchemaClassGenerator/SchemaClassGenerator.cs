@@ -28,7 +28,7 @@ public static class SchemaClassGenerator
 		foreach (string schemaFilePath in files)
 		{
 			Console.WriteLine($"Reading: {Path.GetFileName(schemaFilePath)}");
-			if (Schema.TryLoad((AbsoluteFilePath)schemaFilePath, out var schema) && schema != null)
+			if (Schema.TryLoad((AbsoluteFilePath)schemaFilePath, out var schema) && schema is not null)
 			{
 				foreach (var schemaEnum in schema.Enums)
 				{
@@ -283,7 +283,7 @@ public static class SchemaClassGenerator
 			_ => null,
 		};
 
-		if (obj != null)
+		if (obj is not null)
 		{
 			if (usedDecls.Add(obj.ToString()))
 			{
@@ -394,7 +394,7 @@ public static class SchemaClassGenerator
 	{
 		if (schemaMember.Type.IsObject)
 		{
-			code.WriteLine($"if({schemaMember.Name} != nullptr)");
+			code.WriteLine($"if({schemaMember.Name} is not nullptr)");
 			using (new Scope(code))
 			{
 				code.WriteLine($"{schemaMember.Name}->Destroy();");
@@ -642,7 +642,7 @@ public static class SchemaClassGenerator
 			_ => null,
 		};
 
-		if (obj != null)
+		if (obj is not null)
 		{
 			if (usedIncludes.Add(obj.ToString()))
 			{
@@ -847,7 +847,7 @@ public static class SchemaClassGenerator
 						}
 
 						string key = string.Empty;
-						if (keyMember != null)
+						if (keyMember is not null)
 						{
 							key = $"{keyMember.Type}(), ";
 						}
@@ -873,7 +873,7 @@ public static class SchemaClassGenerator
 					code.WriteLine($"int indexToDelete = -1;");
 					string elem = "elem";
 
-					if (keyMember != null)
+					if (keyMember is not null)
 					{
 						elem = "[key, elem]";
 
@@ -922,7 +922,7 @@ public static class SchemaClassGenerator
 								code.WriteLine($"ImGui::SameLine();");
 								string key = $"\"{array.ElementType}\"";
 
-								if (keyMember != null)
+								if (keyMember is not null)
 								{
 									key = $"std::to_string(elem->{keyMember.Name})";
 									if (keyMember.Type is Schema.Types.String)
@@ -965,7 +965,7 @@ public static class SchemaClassGenerator
 						}
 					}
 
-					if (keyMember != null)
+					if (keyMember is not null)
 					{
 						code.WriteLine();
 						code.WriteLine($"auto keysToFix = vector<{keyMember.Type}>();");
