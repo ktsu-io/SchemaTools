@@ -7,3 +7,4 @@ using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "<Pending>", Scope = "member", Target = "~P:ktsu.io.SchemaTools.SchemaEditorOptions.DividerStates")]
 [assembly: SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "<Pending>", Scope = "member", Target = "~P:ktsu.io.SchemaTools.SchemaEditorOptions.PanelStates")]
+[assembly: SuppressMessage("Style", "IDE0063:Use simple 'using' statement", Justification = "<Pending>", Scope = "member", Target = "~M:ktsu.io.SchemaTools.SchemaEditor.ShowEnums")]

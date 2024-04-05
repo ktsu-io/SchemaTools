@@ -116,8 +116,21 @@ public class SchemaEditor
 
 	private void ShowLeftPanel(float dt)
 	{
-		ShowCollapsiblePanel($"Enums ({CurrentSchema?.GetEnums().Count ?? 0})", ShowEnums);
-		ShowCollapsiblePanel($"Classes ({CurrentSchema?.GetClasses().Count ?? 0})", ShowClasses);
+		using (Style.Button.Alignment.Left())
+		{
+			if (ImGui.Button($"Enums ({CurrentSchema?.GetEnums().Count ?? 0})"))
+			{
+			}
+		}
+		ShowEnums();
+
+		using (Style.Button.Alignment.Left())
+		{
+			if (ImGui.Button($"Classes ({CurrentSchema?.GetClasses().Count ?? 0})"))
+			{
+			}
+		}
+		ShowClasses();
 	}
 
 	private void ShowRightPanel(float dt)
@@ -223,19 +236,22 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			if (ImGui.Button("Add Enum", new Vector2(FieldWidth, 0)))
+			using (Style.Button.Alignment.Left())
 			{
-				Popups.OpenInputString("Input", "New Enum Name", string.Empty, (newName) =>
+				if (ImGui.Button("+ New Enum"))
 				{
-					if (CurrentSchema.TryAddEnum((EnumName)newName))
+					Popups.OpenInputString("Input", "New Enum Name", string.Empty, (newName) =>
 					{
-						QueueSaveOptions();
-					}
-					else
-					{
-						Popups.OpenMessageOK("Error", $"An Enum with that name ({newName}) already exists.");
-					}
-				});
+						if (CurrentSchema.TryAddEnum((EnumName)newName))
+						{
+							QueueSaveOptions();
+						}
+						else
+						{
+							Popups.OpenMessageOK("Error", $"An Enum with that name ({newName}) already exists.");
+						}
+					});
+				}
 			}
 		}
 	}
@@ -244,20 +260,23 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			if (ImGui.Button("Add Class", new Vector2(FieldWidth, 0)))
+			using (Style.Button.Alignment.Left())
 			{
-				Popups.OpenInputString("Input", "New Class Name", string.Empty, (newName) =>
+				if (ImGui.Button("+ New Class"))
 				{
-					if (CurrentSchema.TryAddClass((ClassName)newName))
+					Popups.OpenInputString("Input", "New Class Name", string.Empty, (newName) =>
 					{
-						CurrentClass = CurrentSchema.GetLastClass();
-						QueueSaveOptions();
-					}
-					else
-					{
-						Popups.OpenMessageOK("Error", $"A Class with that name ({newName}) already exists.");
-					}
-				});
+						if (CurrentSchema.TryAddClass((ClassName)newName))
+						{
+							CurrentClass = CurrentSchema.GetLastClass();
+							QueueSaveOptions();
+						}
+						else
+						{
+							Popups.OpenMessageOK("Error", $"A Class with that name ({newName}) already exists.");
+						}
+					});
+				}
 			}
 		}
 	}
@@ -266,7 +285,7 @@ public class SchemaEditor
 	{
 		if (CurrentClass is not null)
 		{
-			if (ImGui.Button("Add Member", new Vector2(FieldWidth, 0)))
+			if (ImGui.Button("+ New Member", new Vector2(FieldWidth, 0)))
 			{
 				Popups.OpenInputString("Input", "New Member Name", string.Empty, (newName) =>
 				{
@@ -287,50 +306,58 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			ShowNewEnum();
-			ImGui.NewLine();
-			foreach (var schemaEnum in CurrentSchema.GetEnums().OrderBy(e => e.Name).ToCollection())
+			using (var enumTree = new Tree())
 			{
-				if (ImGui.Button($"+##addEnumValue{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
+				using (enumTree.Child)
 				{
-					Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
+					ShowNewEnum();
+				}
+				foreach (var schemaEnum in CurrentSchema.GetEnums().OrderBy(e => e.Name).ToCollection())
+				{
+					using (enumTree.Child)
 					{
-						if (!schemaEnum.TryAddValue((EnumValueName)newValue))
+						using (Style.Button.Alignment.Left())
 						{
-							Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
+							ImGui.Button($"{schemaEnum.Name} ({schemaEnum.GetValues().Count})##EnumName{schemaEnum.Name}", new(FieldWidth, 0));
 						}
-					});
-				}
 
-				ImGui.SameLine();
-				using (Style.Button.Alignment.Left())
-				{
-					ImGui.Button($"{schemaEnum.Name}##EnumName{schemaEnum.Name}", new(FieldWidth, 0));
-				}
-
-				ImGui.SameLine();
-				if (ImGui.Button($"X##deleteEnum{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
-				{
-					schemaEnum.TryRemove();
-				}
-
-				using (Style.Indent.ByFrameHeightAndXSpacing())
-				{
-					bool first = true;
-					foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
-					{
-						using (Style.Indent.WithTreeLines(first))
+						ImGui.SameLine();
+						if (ImGui.Button($"X##deleteEnum{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
 						{
-							first = false;
-							using (Style.Button.Alignment.Left())
-							{
-								ImGui.Button($"{enumValueName}##EnumValue{enumValueName}", new(FieldWidth, 0));
-							}
+							schemaEnum.TryRemove();
+						}
+					}
 
-							ImGui.SameLine();
-							if (ImGui.Button($"X##deleteEnumValue{schemaEnum.Name}{enumValueName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+					using (var valueTree = new Tree())
+					{
+						foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
+						{
+							using (valueTree.Child)
 							{
-								schemaEnum.TryRemoveValue(enumValueName);
+								using (Style.Button.Alignment.Left())
+								{
+									ImGui.Button($"{enumValueName}##EnumValue{enumValueName}", new(FieldWidth, 0));
+								}
+
+								ImGui.SameLine();
+								if (ImGui.Button($"X##deleteEnumValue{schemaEnum.Name}{enumValueName}", new Vector2(ImGui.GetFrameHeight(), 0)))
+								{
+									schemaEnum.TryRemoveValue(enumValueName);
+								}
+							}
+						}
+
+						using (valueTree.Child)
+						{
+							if (ImGui.Button($"+ New Value##addEnumValue{schemaEnum.Name}"))
+							{
+								Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
+								{
+									if (!schemaEnum.TryAddValue((EnumValueName)newValue))
+									{
+										Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
+									}
+								});
 							}
 						}
 					}
@@ -345,26 +372,35 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			ImGui.Indent();
-			ShowNewClass();
-			ImGui.NewLine();
-			foreach (var schemaClass in CurrentSchema.GetClasses().OrderBy(c => c.Name).ToCollection())
+			using (var classTree = new Tree())
 			{
-				if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
+				using (classTree.Child)
 				{
-					schemaClass.TryRemove();
+					ShowNewClass();
 				}
 
-				ImGui.SameLine();
-				ImGui.SetNextItemWidth(FieldWidth);
-				if (ImGui.Button($"{schemaClass.Name}", new Vector2(FieldWidth, 0)))
+				foreach (var schemaClass in CurrentSchema.GetClasses().OrderBy(c => c.Name).ToCollection())
 				{
-					CurrentClass = schemaClass;
-					QueueSaveOptions();
+					using (classTree.Child)
+					{
+						using (Style.Button.Alignment.Left())
+						{
+							if (ImGui.Button($"{schemaClass.Name}", new Vector2(FieldWidth, 0)))
+							{
+								CurrentClass = schemaClass;
+								QueueSaveOptions();
+							}
+						}
+
+						ImGui.SameLine();
+						if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
+						{
+							schemaClass.TryRemove();
+						}
+					}
 				}
 			}
 
-			ImGui.Unindent();
 			ImGui.NewLine();
 		}
 	}
