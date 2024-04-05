@@ -7,6 +7,7 @@ using System.Numerics;
 using ImGuiNET;
 using ktsu.io.Extensions;
 using ktsu.io.ImGuiApp;
+using ktsu.io.ImGuiStyler;
 using ktsu.io.ImGuiWidgets;
 using ktsu.io.SchemaEditor;
 using ktsu.io.StrongPaths;
@@ -107,16 +108,19 @@ public class SchemaEditor
 
 	private void OnTick(float dt)
 	{
-		DividerContainerCols.Tick(dt);
+		using (Theme.Color(Theme.Palette.Normal))
+		{
+			DividerContainerCols.Tick(dt);
 
-		SaveOptionsIfRequired();
+			SaveOptionsIfRequired();
 
-		Popups.Update();
+			Popups.Update();
+		}
 	}
 
 	private void ShowLeftPanel(float dt)
 	{
-		using (Style.Button.Alignment.Left())
+		using (Button.Alignment.Left())
 		{
 			if (ImGui.Button($"Enums ({CurrentSchema?.GetEnums().Count ?? 0})"))
 			{
@@ -124,7 +128,7 @@ public class SchemaEditor
 		}
 		ShowEnums();
 
-		using (Style.Button.Alignment.Left())
+		using (Button.Alignment.Left())
 		{
 			if (ImGui.Button($"Classes ({CurrentSchema?.GetClasses().Count ?? 0})"))
 			{
@@ -236,7 +240,7 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			using (Style.Button.Alignment.Left())
+			using (Button.Alignment.Left())
 			{
 				if (ImGui.Button("+ New Enum"))
 				{
@@ -260,7 +264,7 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			using (Style.Button.Alignment.Left())
+			using (Button.Alignment.Left())
 			{
 				if (ImGui.Button("+ New Class"))
 				{
@@ -316,7 +320,7 @@ public class SchemaEditor
 				{
 					using (enumTree.Child)
 					{
-						using (Style.Button.Alignment.Left())
+						using (Button.Alignment.Left())
 						{
 							ImGui.Button($"{schemaEnum.Name} ({schemaEnum.GetValues().Count})##EnumName{schemaEnum.Name}", new(FieldWidth, 0));
 						}
@@ -334,7 +338,7 @@ public class SchemaEditor
 						{
 							using (valueTree.Child)
 							{
-								using (Style.Button.Alignment.Left())
+								using (Button.Alignment.Left())
 								{
 									ImGui.Button($"{enumValueName}##EnumValue{enumValueName}", new(FieldWidth, 0));
 								}
@@ -383,7 +387,7 @@ public class SchemaEditor
 				{
 					using (classTree.Child)
 					{
-						using (Style.Button.Alignment.Left())
+						using (Button.Alignment.Left())
 						{
 							if (ImGui.Button($"{schemaClass.Name}", new Vector2(FieldWidth, 0)))
 							{
@@ -597,19 +601,19 @@ public class SchemaEditor
 		{
 			if (string.IsNullOrEmpty(CurrentSchema.FilePath))
 			{
-				using (Style.Text.Color.Info())
+				using (Theme.Color(Theme.Palette.Error))
 				{
-					ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
-				}
+					Text.PrintWithTheme("Schema has not been saved. Save it before configuring relative paths.");
 
-				if (ImGui.Button("Save Now"))
-				{
-					SaveAs();
+					if (ImGui.Button("Save Now"))
+					{
+						SaveAs();
+					}
 				}
 				return;
 			}
 
-			ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
+			Text.PrintWithTheme($"Schema Path: {CurrentSchema.FilePath}");
 
 			bool projectRootIsSet = ValidateProjectRootIsSet();
 			ShowSetProjectRoot();
@@ -617,7 +621,11 @@ public class SchemaEditor
 
 			if (projectRootIsSet && schemaLocationIsValid)
 			{
-				ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
+				var colors = ImGui.GetStyle().Colors;
+				var backgroundColor = ImGuiStyler.Color.FromVector(colors[(int)ImGuiCol.WindowBg]);
+				var textColor = backgroundColor.CalculateOptimalTextColorForContrast();
+
+				Text.PrintWithTheme($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
 				ImGui.SameLine();
 				if (ImGui.Button("Set Data Path"))
 				{
@@ -634,9 +642,9 @@ public class SchemaEditor
 	{
 		if (string.IsNullOrEmpty(CurrentSchema?.RelativePaths.RelativeProjectRootPath))
 		{
-			using (Style.Text.Color.Info())
+			using (Theme.Color(Theme.Palette.Warning))
 			{
-				ImGui.TextUnformatted("Set the path of the project's root directory.");
+				Text.PrintWithTheme("Set the path of the project's root directory.");
 			}
 			return false;
 		}
@@ -648,7 +656,7 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
+			Text.PrintWithTheme($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
 			ImGui.SameLine();
 			if (ImGui.Button("Set Project Root"))
 			{
@@ -670,14 +678,14 @@ public class SchemaEditor
 			var expectedSchemaPath = expectedProjectRoot / expectedRelativeSchemaPath;
 			if (Path.GetFullPath(expectedSchemaPath) != Path.GetFullPath(absoluteSchemaPath))
 			{
-				using (Style.Text.Color.Error())
+				using (Theme.Color(Theme.Palette.Error))
 				{
-					ImGui.TextUnformatted("Schema appears to have been moved.");
-					ImGui.TextUnformatted("Reset the path of the project's root directory.");
+					Text.PrintWithTheme("Schema appears to have been moved.");
+					Text.PrintWithTheme("Reset the path of the project's root directory.");
 				}
 
-				ImGui.TextUnformatted($"Expected: {expectedSchemaPath}");
-				ImGui.TextUnformatted($"Actual: {absoluteSchemaPath}");
+				Text.PrintWithTheme($"Expected: {expectedSchemaPath}");
+				Text.PrintWithTheme($"Actual: {absoluteSchemaPath}");
 
 				return false;
 			}
