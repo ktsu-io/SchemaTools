@@ -129,6 +129,7 @@ public partial class Schema
 		[JsonPolymorphic(TypeDiscriminatorPropertyName = "TypeName")]
 		public abstract class BaseType : SchemaMemberChild<BaseTypeName>, IEquatable<BaseType?>
 		{
+			public override bool TryRemove() => throw new InvalidOperationException("Cannot remove a type from a member");
 			public bool Equals(BaseType? other) => ReferenceEquals(this, other) || ((other?.GetType()) == GetType() && other.ToString() != ToString());
 
 			public override bool Equals(object? obj) => Equals(obj as BaseType);

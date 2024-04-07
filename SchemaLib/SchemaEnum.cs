@@ -25,5 +25,7 @@ public class SchemaEnum : SchemaChild<EnumName>
 
 	public bool TryRemoveValue(EnumValueName enumValueName) => Values.Remove(enumValueName);
 
-	public bool TryRemove() => ParentSchema?.TryRemoveEnum(this) ?? false;
+	public override bool TryRemove() => ParentSchema?.TryRemoveEnum(this) ?? false;
+
+	public override string Summary() => $"{Name} ({Values.Count})";
 }

@@ -20,5 +20,7 @@ public class SchemaClass : SchemaChild<ClassName>
 
 	public bool TryRemoveMember(SchemaMember schemaMember) => Schema.TryRemoveChild(schemaMember, Members);
 
-	public bool TryRemove() => ParentSchema?.TryRemoveClass(this) ?? false;
+	public override bool TryRemove() => ParentSchema?.TryRemoveClass(this) ?? false;
+
+	public override string Summary() => $"{Name} ({Members.Count})";
 }

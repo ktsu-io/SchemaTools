@@ -2,6 +2,7 @@
 
 namespace ktsu.io.SchemaTools;
 
+using System;
 using System.Diagnostics;
 using System.Numerics;
 using ImGuiNET;
@@ -18,7 +19,7 @@ public class SchemaEditor
 	internal Schema? CurrentSchema { get; set; }
 	internal SchemaClass? CurrentClass { get; set; }
 	internal SchemaEditorOptions Options { get; } = new();
-	private static float FieldWidth => ImGui.GetIO().DisplaySize.X * 0.15f;
+	internal static float FieldWidth => ImGui.GetIO().DisplaySize.X * 0.15f;
 	private DateTime LastSaveOptionsTime { get; set; } = DateTime.MinValue;
 	private DateTime SaveOptionsQueuedTime { get; set; } = DateTime.MinValue;
 	private TimeSpan SaveOptionsDebounceTime { get; } = TimeSpan.FromSeconds(3);
@@ -306,52 +307,60 @@ public class SchemaEditor
 		}
 	}
 
+	internal static bool ToggleVisibility(string key)
+	{
+		Instance.QueueSaveOptions();
+		if (Instance.Options.HiddenItems.Remove(key))
+		{
+			return false;
+		}
+
+		Instance.Options.HiddenItems.Add(key);
+		return true;
+	}
+
+	internal static bool IsVisible(string key) => !Instance.Options.HiddenItems.Contains(key);
+
 	private void ShowEnums()
 	{
 		if (CurrentSchema is not null)
 		{
-			using (var enumTree = new Tree())
-			{
-				using (enumTree.Child)
+			var sortedEnums = CurrentSchema.GetEnums().OrderBy(e => e.Name);
+			SchemaTree<SchemaEnum>.ShowTree("Enums", sortedEnums,
+				onOpen: (t) =>
 				{
-					ShowNewEnum();
-				}
-				foreach (var schemaEnum in CurrentSchema.GetEnums().OrderBy(e => e.Name).ToCollection())
+					using (t.Child)
+					{
+						ShowNewEnum();
+					}
+				},
+				onItem: (e) =>
 				{
-					using (enumTree.Child)
+					if (e is SchemaEnum schemaEnum)
+					{
+						ShowEnumValues(schemaEnum);
+					}
+				},
+				onClose: null);
+		}
+	}
+
+	private void ShowEnumValues(SchemaEnum schemaEnum)
+	{
+		SchemaTree<EnumValueName>.ShowTree("EnumValues", schemaEnum.GetValues(),
+				onOpen: null,
+				onItem: (e) =>
+				{
+					if (e is SchemaEnum schemaEnum)
+					{
+						ShowEnumValues(schemaEnum);
+					}
+				},
+				onClose: (t) =>
+				{
+					using (t.Child)
 					{
 						using (Button.Alignment.Left())
-						{
-							ImGui.Button($"{schemaEnum.Name} ({schemaEnum.GetValues().Count})##EnumName{schemaEnum.Name}", new(FieldWidth, 0));
-						}
-
-						ImGui.SameLine();
-						if (ImGui.Button($"X##deleteEnum{schemaEnum.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
-						{
-							schemaEnum.TryRemove();
-						}
-					}
-
-					using (var valueTree = new Tree())
-					{
-						foreach (var enumValueName in schemaEnum.GetValues().ToCollection())
-						{
-							using (valueTree.Child)
-							{
-								using (Button.Alignment.Left())
-								{
-									ImGui.Button($"{enumValueName}##EnumValue{enumValueName}", new(FieldWidth, 0));
-								}
-
-								ImGui.SameLine();
-								if (ImGui.Button($"X##deleteEnumValue{schemaEnum.Name}{enumValueName}", new Vector2(ImGui.GetFrameHeight(), 0)))
-								{
-									schemaEnum.TryRemoveValue(enumValueName);
-								}
-							}
-						}
-
-						using (valueTree.Child)
 						{
 							if (ImGui.Button($"+ New Value##addEnumValue{schemaEnum.Name}"))
 							{
@@ -365,11 +374,7 @@ public class SchemaEditor
 							}
 						}
 					}
-
-					ImGui.NewLine();
-				}
-			}
-		}
+				});
 	}
 
 	private void ShowClasses()
@@ -592,7 +597,7 @@ public class SchemaEditor
 			return $"{nameof(Schema.Types.Enum)}({enumType.EnumName})";
 		}
 
-		return schemaMember.Type.ToString();
+		return schemaMember.Type.Summary();
 	}
 
 	private void ShowSchemaConfig()
@@ -603,7 +608,7 @@ public class SchemaEditor
 			{
 				using (Theme.Color(Theme.Palette.Error))
 				{
-					Text.PrintWithTheme("Schema has not been saved. Save it before configuring relative paths.");
+					ImGui.TextUnformatted("Schema has not been saved. Save it before configuring relative paths.");
 
 					if (ImGui.Button("Save Now"))
 					{
@@ -613,7 +618,7 @@ public class SchemaEditor
 				return;
 			}
 
-			Text.PrintWithTheme($"Schema Path: {CurrentSchema.FilePath}");
+			ImGui.TextUnformatted($"Schema Path: {CurrentSchema.FilePath}");
 
 			bool projectRootIsSet = ValidateProjectRootIsSet();
 			ShowSetProjectRoot();
@@ -621,11 +626,7 @@ public class SchemaEditor
 
 			if (projectRootIsSet && schemaLocationIsValid)
 			{
-				var colors = ImGui.GetStyle().Colors;
-				var backgroundColor = ImGuiStyler.Color.FromVector(colors[(int)ImGuiCol.WindowBg]);
-				var textColor = backgroundColor.CalculateOptimalTextColorForContrast();
-
-				Text.PrintWithTheme($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
+				ImGui.TextUnformatted($"Data Path: {CurrentSchema.RelativePaths.RelativeDataSourcePath}");
 				ImGui.SameLine();
 				if (ImGui.Button("Set Data Path"))
 				{
@@ -644,7 +645,7 @@ public class SchemaEditor
 		{
 			using (Theme.Color(Theme.Palette.Warning))
 			{
-				Text.PrintWithTheme("Set the path of the project's root directory.");
+				ImGui.TextUnformatted("Set the path of the project's root directory.");
 			}
 			return false;
 		}
@@ -656,7 +657,7 @@ public class SchemaEditor
 	{
 		if (CurrentSchema is not null)
 		{
-			Text.PrintWithTheme($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
+			ImGui.TextUnformatted($"Project Root Path: {CurrentSchema.RelativePaths.RelativeProjectRootPath}");
 			ImGui.SameLine();
 			if (ImGui.Button("Set Project Root"))
 			{
@@ -680,12 +681,12 @@ public class SchemaEditor
 			{
 				using (Theme.Color(Theme.Palette.Error))
 				{
-					Text.PrintWithTheme("Schema appears to have been moved.");
-					Text.PrintWithTheme("Reset the path of the project's root directory.");
+					ImGui.TextUnformatted("Schema appears to have been moved.");
+					ImGui.TextUnformatted("Reset the path of the project's root directory.");
 				}
 
-				Text.PrintWithTheme($"Expected: {expectedSchemaPath}");
-				Text.PrintWithTheme($"Actual: {absoluteSchemaPath}");
+				ImGui.TextUnformatted($"Expected: {expectedSchemaPath}");
+				ImGui.TextUnformatted($"Actual: {absoluteSchemaPath}");
 
 				return false;
 			}

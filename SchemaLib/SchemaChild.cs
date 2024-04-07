@@ -4,10 +4,19 @@ namespace ktsu.io.SchemaTools;
 using System.Text.Json.Serialization;
 using ktsu.io.StrongStrings;
 
-public abstract class SchemaChild<TName> where TName : AnyStrongString, new()
+public abstract class SchemaChildBase
+{
+	public abstract bool TryRemove();
+	public abstract string Summary();
+}
+
+public abstract class SchemaChild<TName> : SchemaChildBase where TName : AnyStrongString, new()
 {
 	[JsonInclude]
 	public TName Name { get; private set; } = new();
+
+	public override string ToString() => Name;
+	public override string Summary() => Name;
 
 	public void Rename(TName name) => Name = name;
 
