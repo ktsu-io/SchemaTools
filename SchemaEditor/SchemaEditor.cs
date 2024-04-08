@@ -1,6 +1,6 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
-namespace ktsu.io.SchemaTools;
+namespace ktsu.io.SchemaEditor;
 
 using System;
 using System.Diagnostics;
@@ -10,7 +10,7 @@ using ktsu.io.Extensions;
 using ktsu.io.ImGuiApp;
 using ktsu.io.ImGuiStyler;
 using ktsu.io.ImGuiWidgets;
-using ktsu.io.SchemaEditor;
+using ktsu.io.SchemaLib;
 using ktsu.io.StrongPaths;
 
 public class SchemaEditor
@@ -26,7 +26,8 @@ public class SchemaEditor
 	private DividerContainer DividerContainerCols { get; init; }
 
 	private ImGuiAppWindowState InitialWindowState { get; init; }
-	private Popups Popups { get; } = new();
+	internal Popups Popups { get; } = new();
+	private TreeSchema TreeSchema { get; init; }
 
 	private static void Main(string[] _)
 	{
@@ -41,6 +42,7 @@ public class SchemaEditor
 
 	public SchemaEditor()
 	{
+		TreeSchema = new(this);
 		DividerContainerCols =
 			new(
 				"RootDivider",
@@ -119,24 +121,7 @@ public class SchemaEditor
 		}
 	}
 
-	private void ShowLeftPanel(float dt)
-	{
-		using (Button.Alignment.Left())
-		{
-			if (ImGui.Button($"Enums ({CurrentSchema?.GetEnums().Count ?? 0})"))
-			{
-			}
-		}
-		ShowEnums();
-
-		using (Button.Alignment.Left())
-		{
-			if (ImGui.Button($"Classes ({CurrentSchema?.GetClasses().Count ?? 0})"))
-			{
-			}
-		}
-		ShowClasses();
-	}
+	private void ShowLeftPanel(float dt) => TreeSchema.Show();
 
 	private void ShowRightPanel(float dt)
 	{
@@ -237,76 +222,6 @@ public class SchemaEditor
 		}, "*.schema.json");
 	}
 
-	private void ShowNewEnum()
-	{
-		if (CurrentSchema is not null)
-		{
-			using (Button.Alignment.Left())
-			{
-				if (ImGui.Button("+ New Enum"))
-				{
-					Popups.OpenInputString("Input", "New Enum Name", string.Empty, (newName) =>
-					{
-						if (CurrentSchema.TryAddEnum((EnumName)newName))
-						{
-							QueueSaveOptions();
-						}
-						else
-						{
-							Popups.OpenMessageOK("Error", $"An Enum with that name ({newName}) already exists.");
-						}
-					});
-				}
-			}
-		}
-	}
-
-	private void ShowNewClass()
-	{
-		if (CurrentSchema is not null)
-		{
-			using (Button.Alignment.Left())
-			{
-				if (ImGui.Button("+ New Class"))
-				{
-					Popups.OpenInputString("Input", "New Class Name", string.Empty, (newName) =>
-					{
-						if (CurrentSchema.TryAddClass((ClassName)newName))
-						{
-							CurrentClass = CurrentSchema.GetLastClass();
-							QueueSaveOptions();
-						}
-						else
-						{
-							Popups.OpenMessageOK("Error", $"A Class with that name ({newName}) already exists.");
-						}
-					});
-				}
-			}
-		}
-	}
-
-	private void ShowNewMember()
-	{
-		if (CurrentClass is not null)
-		{
-			if (ImGui.Button("+ New Member", new Vector2(FieldWidth, 0)))
-			{
-				Popups.OpenInputString("Input", "New Member Name", string.Empty, (newName) =>
-				{
-					if (CurrentClass.TryAddMember((MemberName)newName))
-					{
-						QueueSaveOptions();
-					}
-					else
-					{
-						Popups.OpenMessageOK("Error", $"A Member with that name ({newName}) already exists.");
-					}
-				});
-			}
-		}
-	}
-
 	internal static bool ToggleVisibility(string key)
 	{
 		Instance.QueueSaveOptions();
@@ -321,113 +236,12 @@ public class SchemaEditor
 
 	internal static bool IsVisible(string key) => !Instance.Options.HiddenItems.Contains(key);
 
-	private void ShowEnums()
-	{
-		if (CurrentSchema is not null)
-		{
-			var sortedEnums = CurrentSchema.GetEnums().OrderBy(e => e.Name);
-
-			ButtonTree<SchemaEnum>.ShowTree("Enums", sortedEnums, new()
-			{
-				GetText = (e) => $"{e.Name} ({e.GetValues().Count})",
-				GetId = (e) => e.Name,
-				OnTreeStart = (t) =>
-				{
-					using (t.Child)
-					{
-						ShowNewEnum();
-					}
-				},
-				OnItemEnd = ShowEnumValues,
-				OnItemContextMenu = (e) =>
-				{
-					if (ImGui.Selectable($"Delete {e.Name}"))
-					{
-						e.TryRemove();
-					}
-				},
-			});
-		}
-	}
-
-	private void ShowEnumValues(SchemaEnum schemaEnum)
-	{
-		ButtonTree<EnumValueName>.ShowTree(schemaEnum.Name, schemaEnum.GetValues(), new()
-		{
-			GetText = (e) => e,
-			GetId = (e) => e,
-			OnItemContextMenu = (e) =>
-			{
-				if (ImGui.Selectable($"Delete {e}"))
-				{
-					schemaEnum.TryRemoveValue(e);
-				}
-			},
-			OnTreeEnd = (t) =>
-			{
-				using (t.Child)
-				{
-					using (Button.Alignment.Left())
-					{
-						if (ImGui.Button($"+ New Value##addEnumValue{schemaEnum.Name}"))
-						{
-							Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
-							{
-								if (!schemaEnum.TryAddValue((EnumValueName)newValue))
-								{
-									Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
-								}
-							});
-						}
-					}
-				}
-			},
-		});
-	}
-
-	private void ShowClasses()
-	{
-		if (CurrentSchema is not null)
-		{
-			using (var classTree = new Tree())
-			{
-				using (classTree.Child)
-				{
-					ShowNewClass();
-				}
-
-				foreach (var schemaClass in CurrentSchema.GetClasses().OrderBy(c => c.Name).ToCollection())
-				{
-					using (classTree.Child)
-					{
-						using (Button.Alignment.Left())
-						{
-							if (ImGui.Button($"{schemaClass.Name}", new Vector2(FieldWidth, 0)))
-							{
-								CurrentClass = schemaClass;
-								QueueSaveOptions();
-							}
-						}
-
-						ImGui.SameLine();
-						if (ImGui.Button($"X##deleteClass{schemaClass.Name}", new Vector2(ImGui.GetFrameHeight(), 0)))
-						{
-							schemaClass.TryRemove();
-						}
-					}
-				}
-			}
-
-			ImGui.NewLine();
-		}
-	}
-
 	public static void ShowMemberConfig(Schema schema, SchemaMember schemaMember)
 	{
 		ArgumentNullException.ThrowIfNull(schema);
 		ArgumentNullException.ThrowIfNull(schemaMember);
 
-		ImGui.Button(MakeTypenameDisplay(schemaMember), new Vector2(FieldWidth, 0));
+		ImGui.Button(schemaMember.Type.DisplayName, new Vector2(FieldWidth, 0));
 		if (ImGui.BeginPopupContextItem($"##{schemaMember.Name}Typename", ImGuiPopupFlags.MouseButtonLeft))
 		{
 			foreach (var type in Schema.Types.Primitives)
@@ -561,9 +375,6 @@ public class SchemaEditor
 		{
 			if (ImGui.CollapsingHeader($"{CurrentClass.Name} Members", ImGuiTreeNodeFlags.DefaultOpen))
 			{
-				ImGui.Indent();
-				ShowNewMember();
-				ImGui.NewLine();
 				float frameHeight = ImGui.GetFrameHeight();
 				float spacing = ImGui.GetStyle().ItemSpacing.X;
 				ImGui.SetCursorPosX(ImGui.GetCursorPosX() + frameHeight + spacing);
@@ -588,24 +399,9 @@ public class SchemaEditor
 					}
 				}
 
-				ImGui.Unindent();
 				ImGui.NewLine();
 			}
 		}
-	}
-
-	private static string MakeTypenameDisplay(SchemaMember schemaMember)
-	{
-		if (schemaMember.Type is Schema.Types.Array array)
-		{
-			return $"{nameof(Schema.Types.Array)}({array.ElementType})";
-		}
-		else if (schemaMember.Type is Schema.Types.Enum enumType)
-		{
-			return $"{nameof(Schema.Types.Enum)}({enumType.EnumName})";
-		}
-
-		return schemaMember.Type.ToString();
 	}
 
 	private void ShowSchemaConfig()
@@ -701,5 +497,13 @@ public class SchemaEditor
 		}
 
 		return true;
+	}
+
+	internal void SwitchClass(ClassName className) => SwitchClass(CurrentSchema?.GetClass(className));
+
+	internal void SwitchClass(SchemaClass? schemaClass)
+	{
+		CurrentClass = schemaClass;
+		QueueSaveOptions();
 	}
 }

@@ -1,6 +1,6 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
-namespace ktsu.io.SchemaTools;
+namespace ktsu.io.SchemaLib;
 using System.Text.Json.Serialization;
 using ktsu.io.StrongStrings;
 

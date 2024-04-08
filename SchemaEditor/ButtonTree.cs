@@ -1,85 +1,122 @@
 namespace ktsu.io.SchemaEditor;
+
 using System;
 using ImGuiNET;
 using ktsu.io.Extensions;
 using ktsu.io.ImGuiStyler;
 using ktsu.io.ImGuiWidgets;
-using ktsu.io.SchemaTools;
 
-internal static class ButtonTree<TItem>
+internal class ButtonTree { }
+internal class ButtonTree<TItem> : ButtonTree
 {
-	internal class Delegates
+	internal class Config
 	{
+		public bool Collapsible { get; set; }
 		public Action<Tree>? OnTreeStart { get; set; }
-		public Action<TItem>? OnItemStart { get; set; }
+		public Action<Tree, TItem>? OnItemStart { get; set; }
 		public Func<TItem, string>? GetText { get; set; }
+		public Func<TItem, string>? GetTooltip { get; set; }
 		public Func<TItem, string>? GetId { get; set; }
 		public Action<TItem>? OnItemClick { get; set; }
 		public Action<TItem>? OnItemDoubleClick { get; set; }
 		public Action<TItem>? OnItemContextMenu { get; set; }
-		public Action<TItem>? OnItemEnd { get; set; }
+		public Action<Tree, TItem>? OnItemEnd { get; set; }
 		public Action<Tree>? OnTreeEnd { get; set; }
 	}
 
-	internal static void ShowTree(string name, IEnumerable<TItem> items) => ShowTree(name, items, null);
-	internal static void ShowTree(string name, IEnumerable<TItem> items, Delegates? delegates)
+	internal static void ShowTree(string id, string text, IEnumerable<TItem> items) => ShowTree(id, text, items, new(), null);
+	internal static void ShowTree(string id, string text, IEnumerable<TItem> items, Config config, Tree? parent)
 	{
-		using (var tree = new Tree())
+		bool isRoot = parent is null;
+		bool treeIsOpen = !isRoot || SchemaEditor.IsVisible(id);
+
+		if (isRoot)
 		{
-			delegates?.OnTreeStart?.Invoke(tree);
-
-			foreach (var item in items.ToCollection())
+			using (Button.Alignment.Left())
 			{
-				if (item is not null)
+				ImGui.Button(text, new(SchemaEditor.FieldWidth, 0));
+			}
+			ImGui.SameLine();
+			if (ImGui.ArrowButton($"##Arrow{id}", treeIsOpen ? ImGuiDir.Down : ImGuiDir.Up))
+			{
+				SchemaEditor.ToggleVisibility(id);
+			}
+		}
+
+		if (treeIsOpen)
+		{
+			using (var tree = new Tree())
+			{
+				config.OnTreeStart?.Invoke(tree);
+
+				foreach (var item in items.ToCollection())
 				{
-					string buttonText = delegates?.GetText?.Invoke(item) ?? item.ToString() ?? string.Empty;
-					string itemId = delegates?.GetId?.Invoke(item) ?? $"{name}.{buttonText}";
-					bool visible = SchemaEditor.IsVisible(itemId);
-
-					using (tree.Child)
+					if (item is not null)
 					{
-						delegates?.OnItemStart?.Invoke(item);
-
-						using (Button.Alignment.Left())
+						string buttonText = config.GetText?.Invoke(item) ?? item.ToString() ?? string.Empty;
+						string itemId = config.GetId?.Invoke(item) ?? $"{id}.{buttonText}";
+						bool itemIsOpen = config.Collapsible == false || SchemaEditor.IsVisible(itemId);
+						using (tree.Child)
 						{
-							ImGui.Button($"{buttonText}##Toggle{itemId}", new(SchemaEditor.FieldWidth, 0));
-							if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+							config.OnItemStart?.Invoke(tree, item);
+
+							using (Button.Alignment.Left())
 							{
-								if (delegates?.OnItemClick is not null)
+								ImGui.Button($"{buttonText}##Btn{itemId}", new(SchemaEditor.FieldWidth, 0));
+								if (ImGui.IsItemClicked())
 								{
-									delegates.OnItemClick(item);
+									if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+									{
+										if (config.OnItemDoubleClick is not null)
+										{
+											config.OnItemDoubleClick(item);
+										}
+									}
+									else
+									{
+										config.OnItemClick?.Invoke(item);
+									}
 								}
-								else
+
+								if (config.OnItemContextMenu is not null)
+								{
+									if (ImGui.BeginPopupContextItem())
+									{
+										config.OnItemContextMenu(item);
+										ImGui.EndPopup();
+									}
+								}
+
+								if (config.GetTooltip is not null)
+								{
+									if (ImGui.IsItemHovered())
+									{
+										ImGui.SetTooltip(config.GetTooltip(item));
+									}
+								}
+							}
+
+							if (config.Collapsible)
+							{
+								ImGui.SameLine();
+								if (ImGui.ArrowButton($"##Arrow{itemId}", itemIsOpen ? ImGuiDir.Down : ImGuiDir.Up))
 								{
 									SchemaEditor.ToggleVisibility(itemId);
 								}
 							}
-							else if (ImGui.IsItemHovered() && ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
-							{
-								delegates?.OnItemDoubleClick?.Invoke(item);
-							}
+						}
 
-							if (delegates?.OnItemContextMenu is not null)
-							{
-								if (ImGui.BeginPopupContextItem())
-								{
-									delegates.OnItemContextMenu(item);
-									ImGui.EndPopup();
-								}
-							}
+						if (itemIsOpen)
+						{
+							config.OnItemEnd?.Invoke(tree, item);
 						}
 					}
-
-					if (visible)
-					{
-						delegates?.OnItemEnd?.Invoke(item);
-					}
 				}
+
+				config?.OnTreeEnd?.Invoke(tree);
+
+				ImGui.NewLine();
 			}
-
-			delegates?.OnTreeEnd?.Invoke(tree);
-
-			ImGui.NewLine();
 		}
 	}
 }

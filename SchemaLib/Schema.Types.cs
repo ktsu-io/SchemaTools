@@ -1,6 +1,6 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
-namespace ktsu.io.SchemaTools;
+namespace ktsu.io.SchemaLib;
 
 using System.Text.Json.Serialization;
 
@@ -145,6 +145,23 @@ public partial class Schema
 
 				var type = typeof(Types).GetNestedTypes().FirstOrDefault(t => t.Name == str);
 				return type is null ? null : Activator.CreateInstance(type);
+			}
+
+			public string DisplayName
+			{
+				get
+				{
+					if (this is Array array)
+					{
+						return $"{nameof(Array)}({array.ElementType})";
+					}
+					else if (this is Enum enumType)
+					{
+						return $"{nameof(Enum)}({enumType.EnumName})";
+					}
+
+					return ToString();
+				}
 			}
 
 			public bool IsBuiltIn => BuiltIn.Contains(GetType());
