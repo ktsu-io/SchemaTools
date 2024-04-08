@@ -326,55 +326,63 @@ public class SchemaEditor
 		if (CurrentSchema is not null)
 		{
 			var sortedEnums = CurrentSchema.GetEnums().OrderBy(e => e.Name);
-			SchemaTree<SchemaEnum>.ShowTree("Enums", sortedEnums,
-				onOpen: (t) =>
+
+			ButtonTree<SchemaEnum>.ShowTree("Enums", sortedEnums, new()
+			{
+				GetText = (e) => $"{e.Name} ({e.GetValues().Count})",
+				GetId = (e) => e.Name,
+				OnTreeStart = (t) =>
 				{
 					using (t.Child)
 					{
 						ShowNewEnum();
 					}
 				},
-				onItem: (e) =>
+				OnItemEnd = ShowEnumValues,
+				OnItemContextMenu = (e) =>
 				{
-					if (e is SchemaEnum schemaEnum)
+					if (ImGui.Selectable($"Delete {e.Name}"))
 					{
-						ShowEnumValues(schemaEnum);
+						e.TryRemove();
 					}
 				},
-				onClose: null);
+			});
 		}
 	}
 
 	private void ShowEnumValues(SchemaEnum schemaEnum)
 	{
-		SchemaTree<EnumValueName>.ShowTree("EnumValues", schemaEnum.GetValues(),
-				onOpen: null,
-				onItem: (e) =>
+		ButtonTree<EnumValueName>.ShowTree(schemaEnum.Name, schemaEnum.GetValues(), new()
+		{
+			GetText = (e) => e,
+			GetId = (e) => e,
+			OnItemContextMenu = (e) =>
+			{
+				if (ImGui.Selectable($"Delete {e}"))
 				{
-					if (e is SchemaEnum schemaEnum)
-					{
-						ShowEnumValues(schemaEnum);
-					}
-				},
-				onClose: (t) =>
+					schemaEnum.TryRemoveValue(e);
+				}
+			},
+			OnTreeEnd = (t) =>
+			{
+				using (t.Child)
 				{
-					using (t.Child)
+					using (Button.Alignment.Left())
 					{
-						using (Button.Alignment.Left())
+						if (ImGui.Button($"+ New Value##addEnumValue{schemaEnum.Name}"))
 						{
-							if (ImGui.Button($"+ New Value##addEnumValue{schemaEnum.Name}"))
+							Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
 							{
-								Popups.OpenInputString("Input", "New Enum Value", string.Empty, (newValue) =>
+								if (!schemaEnum.TryAddValue((EnumValueName)newValue))
 								{
-									if (!schemaEnum.TryAddValue((EnumValueName)newValue))
-									{
-										Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
-									}
-								});
-							}
+									Popups.OpenMessageOK("Error", $"A Enum Value with that name ({newValue}) already exists.");
+								}
+							});
 						}
 					}
-				});
+				}
+			},
+		});
 	}
 
 	private void ShowClasses()
