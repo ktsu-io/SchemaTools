@@ -20,7 +20,7 @@ public partial class Schema
 	[JsonIgnore]
 	public AbsoluteDirectoryPath ProjectRootPath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;
 	[JsonIgnore]
-	public AbsoluteDirectoryPath DataSourcePath => FilePath.DirectoryPath / RelativePaths.RelativeProjectRootPath;
+	public AbsoluteDirectoryPath DataSourcePath => FilePath.DirectoryPath / RelativePaths.RelativeDataSourcePath;
 	#endregion
 
 	#region SchemaChildren
@@ -31,6 +31,10 @@ public partial class Schema
 	[JsonInclude]
 	private Collection<SchemaEnum> Enums { get; set; } = [];
 	public IReadOnlyCollection<SchemaEnum> GetEnums() => Enums;
+
+	[JsonInclude]
+	private Collection<DataSource> DataSources { get; set; } = [];
+	public IReadOnlyCollection<DataSource> GetDataSources() => DataSources;
 
 	#endregion
 
@@ -139,6 +143,7 @@ public partial class Schema
 
 	public bool TryRemoveEnum(SchemaEnum schemaEnum) => schemaEnum?.ParentSchema?.Enums.Remove(schemaEnum) ?? false;
 	public bool TryRemoveClass(SchemaClass schemaClass) => schemaClass?.ParentSchema?.Classes.Remove(schemaClass) ?? false;
+	public bool TryRemoveDataSource(DataSource dataSource) => dataSource?.ParentSchema?.DataSources.Remove(dataSource) ?? false;
 
 	public static TChild? GetChild<TName, TChild>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
@@ -168,6 +173,7 @@ public partial class Schema
 
 	public SchemaEnum? GetEnum(EnumName name) => GetChild(name, Enums);
 	public SchemaClass? GetClass(ClassName name) => GetChild(name, Classes);
+	public DataSource? GetDataSource(DataSourceName name) => GetChild(name, DataSources);
 
 
 	public TChild? AddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
@@ -193,8 +199,10 @@ public partial class Schema
 
 	public bool TryAddEnum(EnumName name) => TryAddChild(name, Enums);
 	public bool TryAddClass(ClassName name) => TryAddChild(name, Classes);
+	public bool TryAddDataSource(DataSourceName name) => TryAddChild(name, DataSources);
 	public SchemaEnum? AddEnum(EnumName name) => AddChild(name, Enums);
 	public SchemaClass? AddClass(ClassName name) => AddChild(name, Classes);
+	public DataSource? AddDataSource(DataSourceName name) => AddChild(name, DataSources);
 
 	public bool TryAddClass(Type type) => AddClass(type) is not null;
 

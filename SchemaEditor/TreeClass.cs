@@ -29,7 +29,7 @@ internal class TreeClass(SchemaEditor schemaEditor)
 						ShowNewClass(schema);
 					}
 				},
-				OnItemClick = schemaEditor.SwitchClass,
+				OnItemClick = schemaEditor.EditClass,
 				OnItemEnd = ShowMemberTree,
 				OnItemContextMenu = (x) =>
 				{
@@ -79,7 +79,7 @@ internal class TreeClass(SchemaEditor schemaEditor)
 					var className = (ClassName)newName;
 					if (schema.TryAddClass(className))
 					{
-						schemaEditor.SwitchClass(className);
+						schemaEditor.EditClass(className);
 					}
 					else
 					{

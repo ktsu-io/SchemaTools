@@ -2,6 +2,7 @@
 
 namespace ktsu.io.SchemaLib;
 
+using System.Diagnostics;
 using ktsu.io.StrongPaths;
 
 
@@ -9,7 +10,14 @@ public class DataSource : SchemaChild<DataSourceName>
 {
 	public const string FileSuffix = ".data.json";
 	public RootSchemaMember RootSchemaMember { get; set; } = new();
-	public FilePath FilePath { get; private set; } = new();
+	public AbsoluteFilePath FilePath
+	{
+		get
+		{
+			Debug.Assert(ParentSchema is not null);
+			return ParentSchema.DataSourcePath / (FileName)$"{Name}{FileSuffix}";
+		}
+	}
 
-	public override bool TryRemove() => throw new NotImplementedException();
+	public override bool TryRemove() => ParentSchema?.TryRemoveDataSource(this) ?? false;
 }

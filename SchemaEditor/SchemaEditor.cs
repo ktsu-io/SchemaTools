@@ -18,6 +18,7 @@ public class SchemaEditor
 	public static SchemaEditor Instance { get; } = new();
 	internal Schema? CurrentSchema { get; set; }
 	internal SchemaClass? CurrentClass { get; set; }
+	internal DataSource? CurrentDataSource { get; set; }
 	internal SchemaEditorOptions Options { get; } = new();
 	internal static float FieldWidth => ImGui.GetIO().DisplaySize.X * 0.15f;
 	private DateTime LastSaveOptionsTime { get; set; } = DateTime.MinValue;
@@ -499,11 +500,21 @@ public class SchemaEditor
 		return true;
 	}
 
-	internal void SwitchClass(ClassName className) => SwitchClass(CurrentSchema?.GetClass(className));
+	internal void EditClass(ClassName name) => EditClass(CurrentSchema?.GetClass(name));
 
-	internal void SwitchClass(SchemaClass? schemaClass)
+	internal void EditClass(SchemaClass? schemaClass)
 	{
 		CurrentClass = schemaClass;
+		CurrentDataSource = null;
+		QueueSaveOptions();
+	}
+
+	internal void EditDataSource(DataSourceName name) => EditDataSource(CurrentSchema?.GetDataSource(name));
+
+	internal void EditDataSource(DataSource? dataSource)
+	{
+		CurrentClass = null;
+		CurrentDataSource = dataSource;
 		QueueSaveOptions();
 	}
 }
