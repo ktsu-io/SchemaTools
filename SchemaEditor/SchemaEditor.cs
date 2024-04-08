@@ -597,7 +597,7 @@ public class SchemaEditor
 			return $"{nameof(Schema.Types.Enum)}({enumType.EnumName})";
 		}
 
-		return schemaMember.Type.Summary();
+		return schemaMember.Type.ToString();
 	}
 
 	private void ShowSchemaConfig()
