@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using ktsu.io.ImGuiWidgets;
+using ktsu.io.SchemaLib;
 using ktsu.io.StrongPaths;
 
 internal class Popups
@@ -12,6 +13,8 @@ internal class Popups
 	private PopupMessageOK PopupMessageOK { get; init; } = new();
 	[JsonIgnore]
 	private PopupInputString PopupInputString { get; init; } = new();
+	[JsonIgnore]
+	private PopupSearchableList<BaseTypeName> PopupTypeList { get; init; } = new();
 	[JsonInclude]
 	private PopupFilesystemBrowser PopupFilesystemBrowser { get; init; } = new();
 	[JsonIgnore]
@@ -40,6 +43,7 @@ internal class Popups
 			action();
 		}
 
+		PopupTypeList.ShowIfOpen();
 		PopupMessageOK.ShowIfOpen();
 		PopupInputString.ShowIfOpen();
 		PopupFilesystemBrowser.ShowIfOpen();
