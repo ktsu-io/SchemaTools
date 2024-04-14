@@ -1,5 +1,6 @@
 namespace ktsu.io.SchemaEditor;
 
+using System.Diagnostics;
 using ImGuiNET;
 using ktsu.io.ImGuiStyler;
 using ktsu.io.ImGuiWidgets;
@@ -46,6 +47,7 @@ internal class TreeClass(SchemaEditor schemaEditor)
 	{
 		var children = schemaClass.GetMembers();
 
+		ImGui.PushID(schemaClass.Name);
 		ButtonTree<SchemaMember>.ShowTree(schemaClass.Name, $"{schemaClass.Name} ({children.Count})", children, new()
 		{
 			GetText = (x) => x.Name,
@@ -66,6 +68,7 @@ internal class TreeClass(SchemaEditor schemaEditor)
 				}
 			},
 		}, parent);
+		ImGui.PopID();
 	}
 
 	private void ShowNewClass(Schema schema)
@@ -98,9 +101,11 @@ internal class TreeClass(SchemaEditor schemaEditor)
 			{
 				Popups.OpenInputString("Input", "New Member Name", string.Empty, (newName) =>
 				{
-					if (schemaClass.TryAddMember((MemberName)newName))
+					var schemaMember = schemaClass.AddMember((MemberName)newName);
+					if (schemaMember is not null)
 					{
-						// TODO: switch current member for editing
+						Debug.Assert(schemaMember.ParentSchema is not null);
+						Popups.OpenTypeList("Select Type", "Type", schemaMember.ParentSchema.GetTypes(), schemaMember.Type, schemaMember.SetType);
 					}
 					else
 					{

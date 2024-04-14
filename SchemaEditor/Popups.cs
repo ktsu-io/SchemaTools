@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using ktsu.io.ImGuiWidgets;
-using ktsu.io.SchemaLib;
 using ktsu.io.StrongPaths;
+using static ktsu.io.SchemaLib.Schema.Types;
 
 internal class Popups
 {
@@ -14,7 +14,7 @@ internal class Popups
 	[JsonIgnore]
 	private PopupInputString PopupInputString { get; init; } = new();
 	[JsonIgnore]
-	private PopupSearchableList<BaseTypeName> PopupTypeList { get; init; } = new();
+	private PopupSearchableList<BaseType> PopupTypeList { get; init; } = new();
 	[JsonInclude]
 	private PopupFilesystemBrowser PopupFilesystemBrowser { get; init; } = new();
 	[JsonIgnore]
@@ -34,6 +34,9 @@ internal class Popups
 
 	internal void OpenBrowserDirectory(string title, Action<AbsoluteDirectoryPath> onConfirm) =>
 		Queue.Enqueue(() => PopupFilesystemBrowser.ChooseDirectory(title, onConfirm));
+
+	internal void OpenTypeList(string title, string label, IEnumerable<BaseType> items, BaseType? defaultItem, Action<BaseType> onConfirm) =>
+		Queue.Enqueue(() => PopupTypeList.Open(title, label, items, defaultItem, (t) => t.DisplayName, onConfirm));
 
 	internal void Update()
 	{

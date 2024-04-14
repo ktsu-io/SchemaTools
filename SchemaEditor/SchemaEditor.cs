@@ -237,91 +237,14 @@ public class SchemaEditor
 
 	internal static bool IsVisible(string key) => !Instance.Options.HiddenItems.Contains(key);
 
-	public static void ShowMemberConfig(Schema schema, SchemaMember schemaMember)
+	public void ShowMemberConfig(Schema schema, SchemaMember schemaMember)
 	{
 		ArgumentNullException.ThrowIfNull(schema);
 		ArgumentNullException.ThrowIfNull(schemaMember);
 
-		ImGui.Button(schemaMember.Type.DisplayName, new Vector2(FieldWidth, 0));
-		if (ImGui.BeginPopupContextItem($"##{schemaMember.Name}Typename", ImGuiPopupFlags.MouseButtonLeft))
+		if (ImGui.Button($"{schemaMember.Type.DisplayName}##Type{schemaMember.Name}", new Vector2(FieldWidth, 0)))
 		{
-			foreach (var type in Schema.Types.Primitives)
-			{
-				if (ImGui.Selectable(type.Name))
-				{
-					if (Activator.CreateInstance(type) is Schema.Types.BaseType newType)
-					{
-						schemaMember.SetType(newType);
-					}
-				}
-			}
-
-			ImGui.Separator();
-			foreach (var schemaClass in schema.GetClasses().OrderBy(c => c.Name))
-			{
-				if (ImGui.Selectable(schemaClass.Name))
-				{
-					schemaMember.SetType(new Schema.Types.Object()
-					{
-						ClassName = schemaClass.Name,
-					});
-				}
-			}
-
-			ImGui.Separator();
-			if (ImGui.BeginMenu(nameof(Schema.Types.Enum), schema.GetEnums().Count != 0))
-			{
-				foreach (var schemaEnum in schema.GetEnums().OrderBy(e => e.Name))
-				{
-					if (ImGui.Selectable(schemaEnum.Name))
-					{
-						schemaMember.SetType(new Schema.Types.Enum()
-						{
-							EnumName = schemaEnum.Name,
-						});
-					}
-				}
-
-				ImGui.EndMenu();
-			}
-
-			ImGui.Separator();
-			if (ImGui.BeginMenu($"{nameof(Schema.Types.Array)}..."))
-			{
-				foreach (var type in Schema.Types.Primitives)
-				{
-					if (ImGui.Selectable(type.Name))
-					{
-						if (Activator.CreateInstance(type) is Schema.Types.BaseType newType)
-						{
-							schemaMember.SetType(new Schema.Types.Array()
-							{
-								ElementType = newType,
-							});
-
-						}
-					}
-				}
-
-				ImGui.Separator();
-				foreach (var schemaClass in schema.GetClasses())
-				{
-					if (ImGui.Selectable(schemaClass.Name))
-					{
-						schemaMember.SetType(new Schema.Types.Array()
-						{
-							ElementType = new Schema.Types.Object()
-							{
-								ClassName = schemaClass.Name,
-							},
-						});
-					}
-				}
-
-				ImGui.EndMenu();
-			}
-
-			ImGui.EndPopup();
+			Popups.OpenTypeList("Select Type", "Type", schema.GetTypes(), schemaMember.Type, schemaMember.SetType);
 		}
 
 		if (schemaMember.Type is Schema.Types.Array array)

@@ -175,7 +175,6 @@ public partial class Schema
 	public SchemaClass? GetClass(ClassName name) => GetChild(name, Classes);
 	public DataSource? GetDataSource(DataSourceName name) => GetChild(name, DataSources);
 
-
 	public TChild? AddChild<TChild, TName>(TName name, Collection<TChild> collection) where TChild : SchemaChild<TName>, new() where TName : AnyStrongString, new()
 	{
 		ArgumentNullException.ThrowIfNull(name);
@@ -307,4 +306,29 @@ public partial class Schema
 
 	public SchemaClass? GetFirstClass() => GetClasses().FirstOrDefault();
 	public SchemaClass? GetLastClass() => GetClasses().LastOrDefault();
+
+	private IEnumerable<Types.BaseType> GetDiscreteTypes()
+	{
+		yield return new Types.Int();
+		yield return new Types.Long();
+		yield return new Types.Float();
+		yield return new Types.Double();
+		yield return new Types.String();
+		yield return new Types.DateTime();
+		yield return new Types.TimeSpan();
+		yield return new Types.Bool();
+
+		foreach (var schemaEnum in GetEnums())
+		{
+			yield return new Types.Enum { EnumName = schemaEnum.Name };
+		}
+
+		foreach (var schemaClass in GetClasses())
+		{
+			yield return new Types.Object { ClassName = schemaClass.Name };
+		}
+	}
+
+	public IEnumerable<Types.BaseType> GetTypes() =>
+		GetDiscreteTypes().Concat(GetDiscreteTypes().Select(t => new Types.Array { ElementType = t }));
 }

@@ -107,6 +107,8 @@ public partial class Schema
 			{ typeof(Vector2), typeof(System.Numerics.Vector2) },
 			{ typeof(Vector3), typeof(System.Numerics.Vector3) },
 			{ typeof(Vector4), typeof(System.Numerics.Vector4) },
+			{ typeof(ColorRGB), typeof(System.Numerics.Vector3) },
+			{ typeof(ColorRGBA), typeof(System.Numerics.Vector4) },
 		};
 
 		[JsonDerivedType(typeof(None), nameof(None))]
@@ -153,7 +155,7 @@ public partial class Schema
 				{
 					if (this is Array array)
 					{
-						return $"{nameof(Array)}({array.ElementType})";
+						return $"{nameof(Array)}({array.ElementType.DisplayName})";
 					}
 					else if (this is Enum enumType)
 					{
