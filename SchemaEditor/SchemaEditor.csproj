@@ -8,7 +8,7 @@
     <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0" />
     <PackageReference Include="ktsu.io.Extensions" Version="1.0.0" />
     <PackageReference Include="ktsu.io.ImGuiApp" Version="1.0.0-alpha.15" />
-    <PackageReference Include="ktsu.io.ImGuiStyler" Version="1.0.0-alpha.5" />
+    <PackageReference Include="ktsu.io.ImGuiStyler" Version="1.0.0-alpha.6" />
     <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.24" />
     <PackageReference Include="ktsu.io.ScopedAction" Version="1.0.0-alpha.3" />
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
