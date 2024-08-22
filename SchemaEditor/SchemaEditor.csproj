@@ -12,8 +12,8 @@
     <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.28" />
     <PackageReference Include="ktsu.io.ScopedAction" Version="1.0.0-alpha.4" />
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
-    <PackageReference Include="ktsu.io.StrongPaths" Version="1.0.8" />
-    <PackageReference Include="ktsu.io.StrongStrings" Version="1.0.1" />
+    <PackageReference Include="ktsu.io.StrongPaths" Version="1.1.1" />
+    <PackageReference Include="ktsu.io.StrongStrings" Version="1.1.0" />
     <ProjectReference Include="..\SchemaLib\SchemaLib.csproj" />
   </ItemGroup>
 </Project>
