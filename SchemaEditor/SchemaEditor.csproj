@@ -3,7 +3,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ktsu.io.AppDataStorage" Version="1.0.0" />
+    <PackageReference Include="ktsu.io.AppDataStorage" Version="1.1.2" />
     <PackageReference Include="ktsu.io.CaseConverter" Version="1.0.1" />
     <PackageReference Include="ktsu.io.CodeBlocker" Version="1.0.0" />
     <PackageReference Include="ktsu.io.Extensions" Version="1.0.7" />
