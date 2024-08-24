@@ -55,7 +55,7 @@ internal class ButtonTree<TItem> : ButtonTree
 					{
 						string buttonText = config.GetText?.Invoke(item) ?? item.ToString() ?? string.Empty;
 						string itemId = config.GetId?.Invoke(item) ?? $"{id}.{buttonText}";
-						bool itemIsOpen = config.Collapsible == false || SchemaEditor.IsVisible(itemId);
+						bool itemIsOpen = !config.Collapsible || SchemaEditor.IsVisible(itemId);
 						using (tree.Child)
 						{
 							config.OnItemStart?.Invoke(tree, item);
