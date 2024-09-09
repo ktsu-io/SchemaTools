@@ -11,7 +11,7 @@
     <PackageReference Include="ktsu.io.ImGuiStyler" Version="1.0.0-alpha.18" />
     <PackageReference Include="ktsu.io.ImGuiApp" Version="1.0.0-alpha.32" />
     <PackageReference Include="ktsu.io.ImGuiStyler" Version="1.0.0-alpha.18" />
-    <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.36" />
+    <PackageReference Include="ktsu.io.ImGuiWidgets" Version="1.0.0-alpha.37" />
     <PackageReference Include="ktsu.io.ScopedAction" Version="1.0.0-alpha.4" />
     <PackageReference Include="ktsu.io.StringifyJsonConvertorFactory" Version="1.0.0-alpha.11" />
     <PackageReference Include="ktsu.io.StrongPaths" Version="1.1.1" />
