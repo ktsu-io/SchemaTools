@@ -15,6 +15,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataSourceGenerator", "Data
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataEditor", "DataEditor\DataEditor.csproj", "{DABB8F89-8276-473B-A950-29669B14CD80}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchemaCodeGenerator", "SchemaCodeGenerator\SchemaCodeGenerator.csproj", "{6797D525-67C1-4040-85B5-2E9E77656C64}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGenerators", "CodeGenerators", "{477BEE13-FADE-44DD-8C6A-F1235E3AA14D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetCodeGenerator", "DotnetCodeGenerator\DotnetCodeGenerator.csproj", "{F6B31946-4407-4745-8B0C-CF2FD527FA30}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +51,14 @@ Global
 		{DABB8F89-8276-473B-A950-29669B14CD80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DABB8F89-8276-473B-A950-29669B14CD80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DABB8F89-8276-473B-A950-29669B14CD80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6797D525-67C1-4040-85B5-2E9E77656C64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6797D525-67C1-4040-85B5-2E9E77656C64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6797D525-67C1-4040-85B5-2E9E77656C64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6797D525-67C1-4040-85B5-2E9E77656C64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6B31946-4407-4745-8B0C-CF2FD527FA30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6B31946-4407-4745-8B0C-CF2FD527FA30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6B31946-4407-4745-8B0C-CF2FD527FA30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6B31946-4407-4745-8B0C-CF2FD527FA30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

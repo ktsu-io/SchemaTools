@@ -5,6 +5,7 @@ namespace ktsu.io.SchemaLib;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ktsu.io.SchemaCodeGenerator;
 using ktsu.io.StrongPaths;
 using ktsu.io.StrongStrings;
 using ktsu.io.StringifyJsonConvertorFactory;
@@ -35,7 +36,11 @@ public partial class Schema
 	[JsonInclude]
 	private Collection<DataSource> DataSources { get; set; } = [];
 	public IReadOnlyCollection<DataSource> GetDataSources() => DataSources;
+	#endregion
 
+	#region CodeGenerators
+	[JsonInclude]
+	private Collection<SchemaCodeGenerator> CodeGenerators { get; set; } = [];
 	#endregion
 
 	public static JsonSerializerOptions JsonSerializerOptions { get; } = new(JsonSerializerDefaults.General)
